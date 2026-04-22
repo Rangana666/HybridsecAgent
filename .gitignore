@@ -1,0 +1,57 @@
+# ============================================================
+#  HybridSec Agent — .gitignore
+# ============================================================
+
+# ── Secrets & Credentials (NEVER commit these) ───────────────
+.env
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+ssl/
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# ── Virtual Environments ─────────────────────────────────────
+venv/
+env/
+.venv/
+
+# ── Database (contains user data) ────────────────────────────
+database/*.db
+database/*.db-shm
+database/*.db-wal
+
+# ── Logs (large, machine-specific) ───────────────────────────
+logs/*.log
+logs/*.json
+
+# ── Generated Reports ────────────────────────────────────────
+data/reports/
+
+# ── ML Model Binaries (regenerate with train_model.py) ───────
+modules/module3_scoring/models/*.pkl
+
+# ── Backups (contain real system config files) ───────────────
+data/backups/
+
+# ── IDE & OS ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Test Artefacts ───────────────────────────────────────────
+.pytest_cache/
+htmlcov/
+.coverage

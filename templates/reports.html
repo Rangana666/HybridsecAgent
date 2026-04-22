@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Reports — HybridSec{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Security Reports</h4>
+    <p class="text-muted small mb-0">Generate PDF and HTML security reports from completed scans.</p>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <!-- ── Generate from scan ─────────────────────────────── -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header small fw-semibold text-muted">
+        <i class="bi bi-file-earmark-text me-1"></i>Available Scans
+      </div>
+      <div class="card-body p-0">
+        {% if scans %}
+          <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 small">
+              <thead>
+                <tr class="text-muted">
+                  <th>Scan ID</th><th>Type</th><th>Target</th>
+                  <th>Completed</th><th>PDF</th><th>HTML</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in scans %}
+                <tr>
+                  <td class="font-monospace" style="font-size:0.73rem;">{{ s.scan_id[:18] }}…</td>
+                  <td>
+                    <span class="badge {% if s.scan_type == 'deep' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                      {{ s.scan_type or '—' }}
+                    </span>
+                  </td>
+                  <td>{{ s.target or '—' }}</td>
+                  <td>{{ (s.completed_at or '')[:16].replace('T',' ') }}</td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-danger btn-gen-report"
+                            data-scan-id="{{ s.scan_id }}" data-format="pdf">
+                      <i class="bi bi-file-pdf me-1"></i>PDF
+                    </button>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-info btn-gen-report"
+                            data-scan-id="{{ s.scan_id }}" data-format="html">
+                      <i class="bi bi-file-code me-1"></i>HTML
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-file-earmark-x fs-2 d-block mb-2"></i>
+            No completed scans found. <a href="{{ url_for('routes.scan') }}">Run a scan first.</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Info panel ──────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header small fw-semibold text-muted">
+        <i class="bi bi-info-circle me-1"></i>Report Contents
+      </div>
+      <div class="card-body small text-muted">
+        <p>Generated reports include:</p>
+        <ul>
+          <li>Executive summary with risk score breakdown</li>
+          <li>Full vulnerability list with CVSS + Hybrid scores</li>
+          <li>SME context profile used during scoring</li>
+          <li>Prioritised remediation recommendations</li>
+          <li>Live Guard incident log</li>
+          <li>Lynis hardening score</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Generated reports list ─────────────────────────── -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-archive me-1"></i>Generated Reports</span>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+          </button>
+          {% if generated %}
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteAllReports(this)">
+            <i class="bi bi-trash3 me-1"></i>Delete All
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body p-0" id="generatedReportsWrapper">
+        {% if generated %}
+          <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 small" id="generatedTable">
+              <thead>
+                <tr class="text-muted">
+                  <th>Filename</th><th>Format</th><th>Size</th>
+                  <th>Created</th><th>Download</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody">
+                {% for r in generated %}
+                <tr id="report-row-{{ r.filename | replace('.','_') }}">
+                  <td class="font-monospace" style="font-size:0.73rem;">{{ r.filename }}</td>
+                  <td>
+                    <span class="badge {% if r.format == 'pdf' %}bg-danger{% else %}bg-info text-dark{% endif %}">
+                      {{ r.format | upper }}
+                    </span>
+                  </td>
+                  <td>{{ r.size_kb }} KB</td>
+                  <td>{{ r.created_at[:16].replace('T',' ') }}</td>
+                  <td>
+                    <a href="{{ url_for('routes.report_download', filename=r.filename) }}"
+                       class="btn btn-sm {% if r.format == 'pdf' %}btn-outline-danger{% else %}btn-outline-info{% endif %}">
+                      <i class="bi bi-download me-1"></i>Download
+                    </a>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="deleteReport('{{ r.filename }}', this)"
+                            title="Delete this report">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-4" id="noReportsMsg">
+            <i class="bi bi-folder2-open fs-2 d-block mb-2"></i>
+            No reports generated yet. Use the buttons above to create one.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Report Status Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="reportToast" class="toast align-items-center text-white border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="reportToastBody">Generating report…</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.CSRF_TOKEN = "{{ csrf_token }}";
+
+async function deleteReport(filename, btn) {
+  if (!confirm('Delete ' + filename + '?')) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+  try {
+    const resp = await fetch('/api/reports/delete', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({csrf_token: window.CSRF_TOKEN, filename}),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      const rowId = 'report-row-' + filename.replace(/\./g, '_');
+      const row = document.getElementById(rowId);
+      if (row) row.remove();
+      if (!document.querySelector('#reportsTableBody tr')) location.reload();
+    } else {
+      alert(data.error || 'Delete failed');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-trash3"></i>';
+    }
+  } catch(e) { alert('Error: ' + e.message); btn.disabled = false; btn.innerHTML = '<i class="bi bi-trash3"></i>'; }
+}
+
+async function deleteAllReports(btn) {
+  if (!confirm('Delete ALL generated reports? This cannot be undone.')) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting…';
+  try {
+    const resp = await fetch('/api/reports/delete-all', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({csrf_token: window.CSRF_TOKEN}),
+    });
+    const data = await resp.json();
+    if (data.ok) location.reload();
+    else { alert(data.error || 'Delete failed'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Delete All'; }
+  } catch(e) { alert('Error: ' + e.message); btn.disabled = false; }
+}
+
+document.querySelectorAll('.btn-gen-report').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const scanId = btn.dataset.scanId;
+    const fmt    = btn.dataset.format;
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating…';
+
+    try {
+      const resp = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({csrf_token: window.CSRF_TOKEN, scan_id: scanId, format: fmt}),
+      });
+      const data = await resp.json();
+      const toastEl = document.getElementById('reportToast');
+      const toastBody = document.getElementById('reportToastBody');
+
+      if (data.success && data.file) {
+        // Extract filename from full path
+        const filename = data.file.split('/').pop();
+        const dlUrl = '/reports/download/' + encodeURIComponent(filename);
+        toastBody.innerHTML =
+          'Report ready: <a href="' + dlUrl + '" class="text-white fw-semibold">' + filename + '</a>';
+        toastEl.classList.remove('bg-warning');
+        toastEl.classList.add('bg-success');
+        // Reload page after a short delay so the generated list refreshes
+        setTimeout(() => location.reload(), 3000);
+      } else {
+        toastBody.textContent = data.message || data.error || 'Generation failed';
+        toastEl.classList.remove('bg-success');
+        toastEl.classList.add('bg-warning');
+      }
+      new bootstrap.Toast(toastEl, {delay: 5000}).show();
+    } catch(e) {
+      alert('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  });
+});
+</script>
+{% endblock %}

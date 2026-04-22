@@ -1,0 +1,307 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-04-17",
+  "description": "HybridSec Agent — Rule definitions for vulnerability detection. Each rule maps a vulnerability type to its base CVSS score, exploit status, and fix template. Used by Module 1 (detection) and Module 3 (rule-based scoring).",
+  "rules": [
+
+    {
+      "type": "ssh_root_login_enabled",
+      "title": "SSH Root Login Enabled",
+      "description": "The SSH server permits direct root login. An attacker who obtains the root password gains full system control without needing privilege escalation.",
+      "category": "ssh",
+      "base_cvss": 7.5,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-250",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "PermitRootLogin",
+      "sshd_config_bad_value": "yes"
+    },
+
+    {
+      "type": "ssh_password_auth_enabled",
+      "title": "SSH Password Authentication Enabled",
+      "description": "SSH allows password-based login, making the server vulnerable to brute-force and credential-stuffing attacks. Key-based authentication should be enforced.",
+      "category": "ssh",
+      "base_cvss": 6.5,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-287",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "PasswordAuthentication",
+      "sshd_config_bad_value": "yes"
+    },
+
+    {
+      "type": "ssh_protocol_v1",
+      "title": "SSH Protocol Version 1 Enabled",
+      "description": "SSH Protocol v1 has known cryptographic weaknesses (weak MAC, no server authentication). All modern deployments must use Protocol 2.",
+      "category": "ssh",
+      "base_cvss": 8.0,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-326",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "Protocol",
+      "sshd_config_bad_value": "1"
+    },
+
+    {
+      "type": "ssh_default_port",
+      "title": "SSH Running on Default Port 22",
+      "description": "SSH is on the default port 22, which is targeted by automated bots and scanners 24/7. Moving to a non-standard port reduces noise significantly.",
+      "category": "ssh",
+      "base_cvss": 3.5,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-16",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "Port",
+      "sshd_config_bad_value": "22"
+    },
+
+    {
+      "type": "ssh_empty_passwords_allowed",
+      "title": "SSH Permits Empty Passwords",
+      "description": "SSH is configured to allow login with empty passwords. Any account without a password is fully accessible via SSH.",
+      "category": "ssh",
+      "base_cvss": 9.0,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-258",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "PermitEmptyPasswords",
+      "sshd_config_bad_value": "yes"
+    },
+
+    {
+      "type": "ssh_x11_forwarding",
+      "title": "SSH X11 Forwarding Enabled",
+      "description": "X11 forwarding is enabled, which can be exploited to hijack graphical sessions or perform port forwarding attacks.",
+      "category": "ssh",
+      "base_cvss": 4.5,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-16",
+      "fix_type": "ssh_fixes",
+      "sshd_config_key": "X11Forwarding",
+      "sshd_config_bad_value": "yes"
+    },
+
+    {
+      "type": "firewall_disabled",
+      "title": "Firewall Not Active",
+      "description": "No host-based firewall (UFW/iptables) is running. All ports are reachable from any IP without restriction.",
+      "category": "firewall",
+      "base_cvss": 7.5,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-1188",
+      "fix_type": "firewall_fixes"
+    },
+
+    {
+      "type": "firewall_default_allow",
+      "title": "Firewall Default Policy Allows All Traffic",
+      "description": "The firewall default INPUT policy is ACCEPT. All ports are open unless explicitly denied. The policy should be DROP or REJECT with explicit allow rules.",
+      "category": "firewall",
+      "base_cvss": 6.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-1188",
+      "fix_type": "firewall_fixes"
+    },
+
+    {
+      "type": "root_equivalent_user",
+      "title": "Non-Root User with UID 0",
+      "description": "A user account that is not 'root' has UID 0, giving it full superuser privileges. This is a backdoor-level finding.",
+      "category": "users",
+      "base_cvss": 9.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-250",
+      "fix_type": null
+    },
+
+    {
+      "type": "user_empty_password",
+      "title": "User Account with Empty Password",
+      "description": "One or more local user accounts have no password set. These accounts are accessible without any credentials.",
+      "category": "users",
+      "base_cvss": 9.5,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-258",
+      "fix_type": "password_fixes"
+    },
+
+    {
+      "type": "weak_password_policy",
+      "title": "Weak System Password Policy",
+      "description": "The system PAM password policy does not enforce minimum length, complexity, or expiry. Users can set trivially guessable passwords.",
+      "category": "users",
+      "base_cvss": 6.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-521",
+      "fix_type": "password_fixes"
+    },
+
+    {
+      "type": "mysql_public_port",
+      "title": "MySQL/MariaDB Exposed on Public Interface",
+      "description": "MySQL (port 3306) is bound to a public-facing interface. Remote attackers can attempt direct database connections or brute-force credentials.",
+      "category": "database",
+      "base_cvss": 8.0,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-1188",
+      "fix_type": "mysql_fixes"
+    },
+
+    {
+      "type": "suspicious_suid_file",
+      "title": "Unexpected SUID Binary Found",
+      "description": "A file with the SUID bit set was found outside of standard system locations (/bin, /sbin, /usr/bin, /usr/sbin). SUID files run as owner (often root) regardless of who executes them and are common privilege escalation vectors.",
+      "category": "file_permissions",
+      "base_cvss": 6.5,
+      "exploit_exists": false,
+      "patch_available": false,
+      "cwe_id": "CWE-276",
+      "fix_type": null
+    },
+
+    {
+      "type": "ssl_certificate_expired",
+      "title": "SSL/TLS Certificate Expired",
+      "description": "The server's SSL certificate has passed its expiry date. Connections will display security warnings and may be rejected by browsers and clients.",
+      "category": "ssl",
+      "base_cvss": 5.5,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-298",
+      "fix_type": null
+    },
+
+    {
+      "type": "ssl_certificate_expiring_soon",
+      "title": "SSL/TLS Certificate Expiring Within 30 Days",
+      "description": "The server SSL certificate expires within 30 days. Renewal should be scheduled immediately to avoid service disruption.",
+      "category": "ssl",
+      "base_cvss": 3.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-298",
+      "fix_type": null
+    },
+
+    {
+      "type": "ssl_certificate_missing",
+      "title": "No SSL/TLS Certificate Configured",
+      "description": "No SSL certificate is installed. All web traffic is transmitted in plaintext and is vulnerable to interception.",
+      "category": "ssl",
+      "base_cvss": 6.5,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-311",
+      "fix_type": null
+    },
+
+    {
+      "type": "high_failed_login_count",
+      "title": "High Number of Failed Login Attempts Detected",
+      "description": "Unusually high failed authentication attempts in auth.log indicate an ongoing brute-force or credential-stuffing attack.",
+      "category": "intrusion",
+      "base_cvss": 5.0,
+      "exploit_exists": true,
+      "patch_available": false,
+      "cwe_id": "CWE-307",
+      "fix_type": "firewall_fixes"
+    },
+
+    {
+      "type": "open_sensitive_port",
+      "title": "Sensitive Service Port Exposed to Network",
+      "description": "A port for a sensitive internal service (database, admin panel, cache) is reachable from the network. These services should be firewalled.",
+      "category": "network",
+      "base_cvss": 7.0,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-1188",
+      "fix_type": "firewall_fixes"
+    },
+
+    {
+      "type": "unpatched_package",
+      "title": "Software Package with Known CVE Installed",
+      "description": "An installed package has a known CVE vulnerability and a security update is available but not yet applied.",
+      "category": "software",
+      "base_cvss": 7.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-1104",
+      "fix_type": null
+    },
+
+    {
+      "type": "apache_outdated",
+      "title": "Apache HTTP Server Outdated",
+      "description": "The installed Apache version is outdated and may contain known exploitable vulnerabilities. Update to the latest stable release.",
+      "category": "software",
+      "base_cvss": 7.5,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-1104",
+      "fix_type": "apache_fixes"
+    },
+
+    {
+      "type": "nginx_outdated",
+      "title": "Nginx Web Server Outdated",
+      "description": "The installed Nginx version may contain known vulnerabilities. Update to the latest stable release.",
+      "category": "software",
+      "base_cvss": 7.0,
+      "exploit_exists": true,
+      "patch_available": true,
+      "cwe_id": "CWE-1104",
+      "fix_type": "apache_fixes"
+    },
+
+    {
+      "type": "lynis_low_hardening_score",
+      "title": "Low System Hardening Score (Lynis < 60)",
+      "description": "The Lynis system audit returned a hardening index below 60 out of 100, indicating significant security configuration deficiencies across the system.",
+      "category": "hardening",
+      "base_cvss": 5.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-16",
+      "fix_type": null
+    },
+
+    {
+      "type": "disk_usage_critical",
+      "title": "Critical Disk Usage (>90%)",
+      "description": "Disk usage exceeds 90%. Full disks prevent security log writes, can halt services, and may be used to cause denial of service.",
+      "category": "system",
+      "base_cvss": 4.0,
+      "exploit_exists": false,
+      "patch_available": false,
+      "cwe_id": "CWE-400",
+      "fix_type": null
+    },
+
+    {
+      "type": "ntp_not_configured",
+      "title": "NTP Time Synchronization Not Configured",
+      "description": "System time is not synchronized via NTP. Inaccurate timestamps make security log correlation unreliable and can affect certificate validation.",
+      "category": "system",
+      "base_cvss": 3.0,
+      "exploit_exists": false,
+      "patch_available": true,
+      "cwe_id": "CWE-16",
+      "fix_type": null
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Remediation — HybridSec{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Remediation</h4>
+    <p class="text-muted small mb-0">
+      {{ remediations | length }} fix recommendations &mdash;
+      {{ remediations | selectattr('autofix_available') | list | length }} auto-fixable
+    </p>
+  </div>
+</div>
+
+<!-- Recent Fixes -->
+{% if recent_fixes %}
+<div class="card mb-4 border-success border-opacity-50">
+  <div class="card-header small fw-semibold text-muted">
+    <i class="bi bi-clock-history me-1"></i>Recent Auto-Fixes (click Rollback to undo)
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-dark table-hover mb-0 small">
+        <thead><tr class="text-muted">
+          <th>Vulnerability</th><th>Config File</th><th>Applied At</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for fix in recent_fixes[:5] %}
+          <tr>
+            <td>{{ fix.vuln_type }}</td>
+            <td class="font-monospace text-muted" style="font-size:0.75rem;">
+              {{ fix.original_path }}
+            </td>
+            <td>{{ (fix.created_at or '')[:16].replace('T',' ') }}</td>
+            <td>
+              {% if not fix.restored %}
+                <button class="btn btn-sm btn-outline-warning btn-rollback"
+                        data-backup-id="{{ fix.backup_id }}">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
+                </button>
+              {% else %}
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-secondary">Rolled back</span>
+                  <button class="btn btn-sm btn-outline-danger btn-delete-fix"
+                          data-backup-id="{{ fix.backup_id }}"
+                          title="Clear this entry">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Remediation Cards -->
+{% if remediations %}
+  <div class="row g-3">
+    {% for r in remediations %}
+      <div class="col-12">
+        <div class="card
+          {% if r.autofix_available %}border-success border-opacity-50{% else %}border-secondary{% endif %}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                  {% if r.autofix_available %}
+                    <span class="badge bg-success">
+                      <i class="bi bi-lightning-fill me-1"></i>AUTO-FIX
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      <i class="bi bi-list-check me-1"></i>MANUAL
+                    </span>
+                  {% endif %}
+                  <span class="badge
+                    {% if r.risk_level == 'high' %}bg-warning text-dark
+                    {% elif r.risk_level == 'critical' %}bg-danger
+                    {% elif r.risk_level == 'low' %}bg-success
+                    {% else %}bg-info text-dark{% endif %}">
+                    Risk: {{ r.risk_level | upper }}
+                  </span>
+                  <span class="fw-semibold">{{ r.title }}</span>
+                </div>
+                <p class="text-muted small mb-2">{{ r.description }}</p>
+
+                <!-- Manual steps (collapsed) -->
+                {% if r.manual_steps %}
+                  <div class="accordion accordion-flush" id="acc_{{ loop.index }}">
+                    <div class="accordion-item bg-transparent border-secondary">
+                      <h2 class="accordion-header">
+                        <button class="accordion-button collapsed bg-transparent text-white small py-2"
+                                type="button" data-bs-toggle="collapse"
+                                data-bs-target="#steps_{{ loop.index }}">
+                          <i class="bi bi-list-ol me-2"></i>Manual Steps ({{ r.manual_steps | length }})
+                        </button>
+                      </h2>
+                      <div id="steps_{{ loop.index }}" class="accordion-collapse collapse">
+                        <div class="accordion-body py-2">
+                          {% for step in r.manual_steps %}
+                            <div class="text-muted small font-monospace">{{ step }}</div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Action buttons -->
+              <div class="d-flex flex-column gap-2" style="min-width:130px;">
+                <div class="text-muted small text-end">
+                  <i class="bi bi-clock me-1"></i>{{ r.estimated_time }}
+                </div>
+                {% if r.autofix_available %}
+                  <button class="btn btn-success btn-sm btn-autofix"
+                          data-vuln-type="{{ r.vuln_type }}"
+                          data-vuln-id="{{ r.vuln_id }}">
+                    <i class="bi bi-lightning-fill me-1"></i>Auto-Fix
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card">
+    <div class="card-body text-center text-muted py-5">
+      <i class="bi bi-tools fs-2 d-block mb-2"></i>
+      No remediation data available.
+      <a href="{{ url_for('routes.scan') }}">Run a scan first.</a>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Auto-Fix Confirmation Modal -->
+<div class="modal fade" id="autofixModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border-warning">
+      <div class="modal-header border-warning">
+        <h5 class="modal-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Confirm Auto-Fix</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="autofixModalBody">Loading...</div>
+      <div class="modal-footer border-warning">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="btnConfirmFix">
+          <i class="bi bi-check2 me-1"></i>Yes, Apply Fix
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="fixToast" class="toast align-items-center text-white border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="fixToastBody">Fix applied.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/autofix.js') }}"></script>
+<script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+{% endblock %}

@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — HybridSec{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Security Dashboard</h4>
+    <p class="text-muted small mb-0">
+      {{ stats.server_hostname }} &mdash; Last scan: {{ stats.scan_time }}
+    </p>
+  </div>
+  <a href="{{ url_for('routes.scan') }}" class="btn btn-cyan">
+    <i class="bi bi-search me-2"></i>Run New Scan
+  </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ROW 1: Live Server Resources + Scoring Engine Status      -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+
+  <!-- Server Resource Gauges -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header small fw-semibold text-muted d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-cpu me-1"></i>Live Server Resources</span>
+        <span id="resLastUpdate" class="text-muted" style="font-size:0.7rem;">Loading…</span>
+      </div>
+      <div class="card-body py-3">
+        <div class="row g-2 text-center">
+
+          <!-- CPU -->
+          <div class="col-3">
+            <div class="gauge-wrap mx-auto">
+              <svg viewBox="0 0 100 100" class="gauge-svg">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e2e" stroke-width="10"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#0dcaf0"
+                        stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="0 263.9" id="gCpuArc"
+                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-val" id="gCpuVal">—</span>
+                <span class="gauge-unit">%</span>
+              </div>
+            </div>
+            <div class="small fw-semibold mt-2">CPU Usage</div>
+            <div class="text-muted gauge-sub" id="gCpuFreq">— MHz</div>
+          </div>
+
+          <!-- CPU Cores (static info block) -->
+          <div class="col-3 d-flex flex-column align-items-center justify-content-center">
+            <div class="cores-box">
+              <i class="bi bi-grid-3x3-gap-fill text-cyan mb-1" style="font-size:1.6rem;"></i>
+              <div class="fw-bold text-white" style="font-size:1.8rem;line-height:1;" id="gCoreCount">—</div>
+              <div class="text-muted small">Cores</div>
+            </div>
+            <div class="text-muted gauge-sub mt-1" id="gCpuLoad">Load: —</div>
+          </div>
+
+          <!-- RAM -->
+          <div class="col-3">
+            <div class="gauge-wrap mx-auto">
+              <svg viewBox="0 0 100 100" class="gauge-svg">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e2e" stroke-width="10"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#6610f2"
+                        stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="0 263.9" id="gRamArc"
+                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-val" id="gRamVal">—</span>
+                <span class="gauge-unit">%</span>
+              </div>
+            </div>
+            <div class="small fw-semibold mt-2">RAM Usage</div>
+            <div class="text-muted gauge-sub" id="gRamSub">— / — GB</div>
+          </div>
+
+          <!-- Disk -->
+          <div class="col-3">
+            <div class="gauge-wrap mx-auto">
+              <svg viewBox="0 0 100 100" class="gauge-svg">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1e1e2e" stroke-width="10"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#198754"
+                        stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="0 263.9" id="gDiskArc"
+                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-val" id="gDiskVal">—</span>
+                <span class="gauge-unit">%</span>
+              </div>
+            </div>
+            <div class="small fw-semibold mt-2">Disk Usage</div>
+            <div class="text-muted gauge-sub" id="gDiskSub">— / — GB</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scoring Engine Status -->
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header small fw-semibold text-muted">
+        <i class="bi bi-diagram-3 me-1"></i>Scoring Engine Status
+      </div>
+      <div class="card-body d-flex flex-column justify-content-center gap-2 py-2">
+
+        <!-- Rule-based -->
+        <div class="d-flex align-items-center gap-3 py-1">
+          <div class="model-icon" style="background:{{ '#198754' if model_status.rule.enabled else '#6c757d' }};">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+              <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5z"/>
+            </svg>
+          </div>
+          <div class="flex-grow-1">
+            <div class="small fw-semibold">Rule-based Engine</div>
+            <div class="text-muted" style="font-size:0.72rem;">
+              Weight 30% —
+              {% if model_status.rule.enabled %}Always active{% else %}<span class="text-warning">Disabled</span>{% endif %}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge {{ 'bg-success' if model_status.rule.enabled else 'bg-secondary' }} px-2">
+              {{ 'Active' if model_status.rule.enabled else 'Off' }}
+            </span>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
+                     data-engine="rule"
+                     {{ 'checked' if model_status.rule.enabled }}>
+            </div>
+          </div>
+        </div>
+        <hr class="border-secondary my-0">
+
+        <!-- ML -->
+        <div class="d-flex align-items-center gap-3 py-1">
+          <div class="model-icon" style="background:{{ '#198754' if (model_status.ml.ok and model_status.ml.enabled) else ('#ffc107' if model_status.ml.ok else '#6c757d') }};">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+              <path d="M6.5 6a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
+              <path d="M5.5.5a.5.5 0 0 0-1 0V2A2.5 2.5 0 0 0 2 4.5H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2v1H.5a.5.5 0 0 0 0 1H2A2.5 2.5 0 0 0 4.5 14v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14h1v1.5a.5.5 0 0 0 1 0V14a2.5 2.5 0 0 0 2.5-2.5h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14v-1h1.5a.5.5 0 0 0 0-1H14A2.5 2.5 0 0 0 11.5 2V.5a.5.5 0 0 0-1 0V2h-1V.5a.5.5 0 0 0-1 0V2h-1V.5a.5.5 0 0 0-1 0V2h-1zm1 4.5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3A1.5 1.5 0 0 1 6.5 5"/>
+            </svg>
+          </div>
+          <div class="flex-grow-1">
+            <div class="small fw-semibold">ML (Random Forest)</div>
+            <div class="text-muted" style="font-size:0.72rem;">
+              Weight 35% —
+              {% if not model_status.ml.enabled %}<span class="text-warning">Disabled</span>
+              {% elif model_status.ml.ok %}Model loaded
+              {% else %}Not trained yet{% endif %}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            {% if not model_status.ml.enabled %}
+              <span class="badge bg-secondary px-2">Off</span>
+            {% elif model_status.ml.ok %}
+              <span class="badge bg-success px-2">Active</span>
+            {% else %}
+              <span class="badge bg-warning text-dark px-2">No model</span>
+            {% endif %}
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
+                     data-engine="ml"
+                     {{ 'checked' if model_status.ml.enabled }}>
+            </div>
+          </div>
+        </div>
+        <hr class="border-secondary my-0">
+
+        <!-- LLM -->
+        <div class="d-flex align-items-center gap-3 py-1" id="dash-llm-row">
+          <div class="model-icon" style="background:{{ '#198754' if (model_status.llm.ok and model_status.llm.enabled) else '#6c757d' }};">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 16 16">
+              <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+            </svg>
+          </div>
+          <div class="flex-grow-1">
+            <div class="small fw-semibold">LLM ({{ model_status.llm.label.split('(')[-1].rstrip(')') | title }})</div>
+            <div class="text-muted" style="font-size:0.72rem;">
+              Weight 35% —
+              {% if not model_status.llm.enabled %}<span class="text-warning">Disabled</span>
+              {% elif model_status.llm.ok %}
+                Key saved
+                <button class="btn btn-link p-0 ms-1 text-cyan text-decoration-none" style="font-size:0.72rem;vertical-align:baseline;"
+                        data-provider="{{ model_status.llm.label.split('(')[-1].rstrip(')').lower() }}"
+                        onclick="testLlmDash(this.dataset.provider,this)">· verify →</button>
+                <span id="dash-llm-result" class="fw-semibold" style="font-size:0.72rem;"></span>
+              {% else %}
+                <a href="{{ url_for('routes.settings') }}#integrations" class="text-warning text-decoration-none">
+                  Add API key in Settings →
+                </a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            {% if not model_status.llm.enabled %}
+              <span class="badge bg-secondary px-2" id="dash-llm-badge">Off</span>
+            {% elif model_status.llm.ok %}
+              <span class="badge bg-success px-2" id="dash-llm-badge">Active</span>
+            {% else %}
+              <span class="badge bg-secondary px-2" id="dash-llm-badge">No key</span>
+            {% endif %}
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
+                     data-engine="llm"
+                     {{ 'checked' if model_status.llm.enabled }}>
+            </div>
+          </div>
+        </div>
+        <hr class="border-secondary my-0">
+
+        <!-- Summary badge -->
+        <div class="text-center pt-1">
+          {% set active_count = [
+              model_status.rule.enabled,
+              model_status.ml.enabled and model_status.ml.ok,
+              model_status.llm.enabled and model_status.llm.ok
+            ] | select | list | length %}
+          {% if active_count == 3 %}
+            <span class="badge bg-success px-3 py-2 w-100">
+              <i class="bi bi-check-circle me-1"></i>Triple Hybrid — Full Accuracy
+            </span>
+          {% elif active_count == 2 %}
+            <span class="badge bg-warning text-dark px-3 py-2 w-100">
+              <i class="bi bi-exclamation-circle me-1"></i>Dual Mode — Reduced Accuracy
+            </span>
+          {% else %}
+            <span class="badge bg-danger px-3 py-2 w-100">
+              <i class="bi bi-x-circle me-1"></i>Rule-only — Limited Accuracy
+            </span>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row 1 -->
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ROW 2: Security Stat Cards                                -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card border-danger">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#dc3545;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="white" viewBox="0 0 16 16">
+            <path d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.8 11.8 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24a7 7 0 0 0 1.048-.625 11.8 11.8 0 0 0 2.517-2.453c1.678-2.195 3.061-5.513 2.465-9.99a1.54 1.54 0 0 0-1.044-1.263 63 63 0 0 0-2.887-.87C9.843.266 8.69 0 8 0M6.854 5.146 8 6.293l1.146-1.147a.5.5 0 1 1 .708.708L8.707 7l1.147 1.146a.5.5 0 0 1-.708.708L8 7.707 6.854 8.854a.5.5 0 1 1-.708-.708L7.293 7 6.146 5.854a.5.5 0 1 1 .708-.708"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-num text-danger">{{ stats.critical }}</div>
+          <div class="stat-label">Critical</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card border-warning">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#ffc107;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="white" viewBox="0 0 16 16">
+            <path d="M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-4-2.5-6 .25 1.5-1.25 2-1.25 2C11 4 9 .5 6 0c.357 2 .5 4-2 6-1.25 1-2 2.729-2 4.5C2 14 4.686 16 8 16m0-1c-1.657 0-3-1-3-2.75 0-.75.25-2 1.25-3C6.125 10 7 10.5 7 10.5c-.375-1.25.5-3.25 2-3.5-.179 1-.25 2 1 3 .625.5 1 1.364 1 2.25C11 14 9.657 15 8 15"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-num text-warning">{{ stats.high }}</div>
+          <div class="stat-label">High</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card border-info">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#0dcaf0;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="white" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4m.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-num text-info">{{ stats.medium }}</div>
+          <div class="stat-label">Medium</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#6c757d;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="white" viewBox="0 0 16 16">
+            <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+            <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-num">{{ stats.low }}</div>
+          <div class="stat-label">Low</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- ROW 3: Lynis Score + Top Risks                            -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="row g-3">
+  <!-- Lynis Score -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header small fw-semibold text-muted">
+        <i class="bi bi-bar-chart-fill me-1"></i>Lynis Hardening Score
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center py-4">
+        {% if stats.lynis_has_data %}
+          {% set score = stats.lynis_score | int %}
+          {% if score >= 70 %}
+            {% set score_color = "text-success" %}{% set score_label = "Good" %}
+          {% elif score >= 50 %}
+            {% set score_color = "text-warning" %}{% set score_label = "Fair" %}
+          {% else %}
+            {% set score_color = "text-danger" %}{% set score_label = "Poor" %}
+          {% endif %}
+          <div class="score-ring {{ score_color }}">{{ score }}</div>
+          <div class="mt-2 fw-semibold {{ score_color }}">{{ score_label }}</div>
+          <div class="text-muted small">/ 100</div>
+          <div class="progress w-75 mt-3" style="height:6px;">
+            <div class="progress-bar {% if score >= 70 %}bg-success{% elif score >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                 style="width:{{ score }}%"></div>
+          </div>
+        {% else %}
+          <i class="bi bi-bar-chart-line text-muted fs-2 mb-3"></i>
+          <div class="text-muted fw-semibold">No data yet</div>
+          <div class="text-muted small text-center mt-2" style="max-width:180px;">
+            Lynis only runs during a <strong>Deep Scan</strong>.<br>
+            <a href="{{ url_for('routes.scan') }}" class="text-cyan text-decoration-none">Run a Deep Scan →</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Vulnerabilities -->
+  <div class="col-md-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="small fw-semibold text-muted">
+          <i class="bi bi-exclamation-triangle me-1"></i>Top Critical/High Risks
+        </span>
+        <a href="{{ url_for('routes.risks') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_vulns %}
+          <div class="list-group list-group-flush">
+            {% for v in recent_vulns %}
+              <div class="list-group-item bg-transparent border-secondary py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold small">{{ v.title }}</div>
+                    <div class="text-muted" style="font-size:0.75rem;">
+                      &mdash; {{ v.category or v.vuln_type or '' }}
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 align-items-center">
+                    <span class="badge {% if v.priority == 'CRITICAL' %}bg-danger{% elif v.priority == 'HIGH' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                      {{ v.priority }}
+                    </span>
+                    <span class="text-muted small">{{ "%.1f"|format(v.hybrid_score or v.cvss_score or 0) }}</span>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-shield-check fs-2 d-block mb-2"></i>
+            No scan results yet. <a href="{{ url_for('routes.scan') }}">Run a scan</a>.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.gauge-wrap {
+  position: relative;
+  width: 100px; height: 100px;
+}
+.gauge-svg { width: 100%; height: 100%; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.gauge-val  { font-size: 1.3rem; font-weight: 700; line-height: 1; color: #fff; }
+.gauge-unit { font-size: 0.6rem; color: #aaa; }
+.gauge-sub  { font-size: 0.68rem; }
+.cores-box  {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(13,202,240,.08);
+  border: 1px solid rgba(13,202,240,.2);
+  border-radius: 12px;
+  padding: 10px 16px;
+  min-width: 80px;
+}
+.model-icon {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+</style>
+
+<script>
+const C = 2 * Math.PI * 42;  // circumference r=42 ≈ 263.9
+
+function setGauge(arcId, valId, defaultColor, pct) {
+  const arc = document.getElementById(arcId);
+  const val = document.getElementById(valId);
+  if (!arc) return;
+  const fill = Math.min(100, Math.max(0, pct));
+  arc.setAttribute('stroke-dasharray', `${(fill / 100) * C} ${C}`);
+  arc.setAttribute('stroke',
+    pct >= 90 ? '#dc3545' : pct >= 70 ? '#ffc107' : defaultColor);
+  if (val) val.textContent = fill.toFixed(1);
+}
+
+async function fetchResources() {
+  try {
+    const resp = await fetch('/api/system/resources', {
+      credentials: 'include'          // ← send session cookie
+    });
+    if (!resp.ok) return;
+    const d = await resp.json();
+    if (!d.available) {
+      document.getElementById('resLastUpdate').textContent = 'psutil not installed on server';
+      return;
+    }
+
+    setGauge('gCpuArc',  'gCpuVal',  '#0dcaf0', d.cpu_pct);
+    setGauge('gRamArc',  'gRamVal',  '#6610f2', d.ram_pct);
+    setGauge('gDiskArc', 'gDiskVal', '#198754', d.disk_pct);
+
+    const el = id => document.getElementById(id);
+    if (el('gCpuFreq'))   el('gCpuFreq').textContent  = d.cpu_freq_mhz ? `${d.cpu_freq_mhz} MHz` : '';
+    if (el('gCoreCount')) el('gCoreCount').textContent = d.cpu_cores ?? '—';
+    if (el('gCpuLoad'))   el('gCpuLoad').textContent   = `Load: ${d.cpu_pct}%`;
+    if (el('gRamSub'))    el('gRamSub').textContent    = `${d.ram_used_gb} / ${d.ram_total_gb} GB`;
+    if (el('gDiskSub'))   el('gDiskSub').textContent   = `${d.disk_used_gb} / ${d.disk_total_gb} GB`;
+
+    const ts = new Date().toLocaleTimeString();
+    if (el('resLastUpdate')) el('resLastUpdate').textContent = `Updated ${ts}`;
+  } catch (e) {
+    const el = document.getElementById('resLastUpdate');
+    if (el) el.textContent = 'Connection error';
+  }
+}
+
+fetchResources();
+setInterval(fetchResources, 5000);   // refresh every 5 s
+setTimeout(() => location.reload(), 60000);  // page reload every 60 s
+
+// Engine on/off toggles
+document.querySelectorAll('.engine-toggle').forEach(el => {
+  el.addEventListener('change', async function() {
+    const engine  = this.dataset.engine;
+    const enabled = this.checked;
+    this.disabled = true;
+    try {
+      const resp = await fetch('/api/engines/toggle', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ csrf_token: '{{ csrf_token }}', engine, enabled }),
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        // Reload page so badge colours and weights update
+        setTimeout(() => location.reload(), 300);
+      } else {
+        alert('Toggle failed: ' + (data.error || 'unknown'));
+        this.checked = !enabled;  // revert
+        this.disabled = false;
+      }
+    } catch(e) {
+      alert('Request failed: ' + e.message);
+      this.checked = !enabled;
+      this.disabled = false;
+    }
+  });
+});
+
+async function testLlmDash(provider, btn) {
+  const result = document.getElementById('dash-llm-result');
+  const badge  = document.getElementById('dash-llm-badge');
+  if (result) { result.textContent = '…'; result.style.color = '#aaa'; }
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/api/integrations/test-llm', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ csrf_token: '{{ csrf_token }}', provider }),
+    });
+    const data = await resp.json();
+    if (result) {
+      result.textContent = data.ok ? '✓ Working' : ('✗ ' + (data.message || 'Error'));
+      result.style.color = data.ok ? '#20c997' : '#dc3545';
+    }
+    if (badge && data.ok) {
+      badge.textContent = 'Verified';
+      badge.className = 'badge bg-success px-2';
+    } else if (badge && !data.ok) {
+      badge.textContent = 'Key error';
+      badge.className = 'badge bg-danger px-2';
+    }
+  } catch(e) {
+    if (result) { result.textContent = '✗ Request failed'; result.style.color = '#dc3545'; }
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

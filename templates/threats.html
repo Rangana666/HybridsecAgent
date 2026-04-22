@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Live Guard — HybridSec{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Live Guard</h4>
+    <p class="text-muted small mb-0">Real-time threat detection — SSH brute force, port scans, anomalies.</p>
+  </div>
+  <span id="liveIndicator" class="badge bg-success">
+    <i class="bi bi-circle-fill me-1" style="font-size:0.6rem;"></i>LIVE
+  </span>
+</div>
+
+<!-- Summary Badges -->
+<div class="row g-3 mb-4">
+  {% set ssh_count = incidents | selectattr('type', 'equalto', 'ssh_brute_force') | list | length %}
+  {% set port_count = incidents | selectattr('type', 'equalto', 'port_scan') | list | length %}
+  {% set ddos_count = incidents | selectattr('type', 'equalto', 'ddos') | list | length %}
+  <div class="col-4">
+    <div class="card text-center border-danger border-opacity-50">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold text-danger">{{ ssh_count }}</div>
+        <div class="text-muted small">SSH Brute Force</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card text-center border-warning border-opacity-50">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold text-warning">{{ port_count }}</div>
+        <div class="text-muted small">Port Scans</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-4">
+    <div class="card text-center border-info border-opacity-50">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold text-info">{{ ddos_count }}</div>
+        <div class="text-muted small">DDoS Attempts</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incident Feed -->
+<div class="card">
+  <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-activity me-1"></i>Recent Incidents</span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="text-muted">Auto-refreshes every 15s</span>
+      {% if incidents %}
+      <button class="btn btn-outline-danger btn-sm py-0" onclick="clearAllIncidents()">
+        <i class="bi bi-trash me-1"></i>Clear All
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body p-0" id="threatFeed">
+    {% if incidents %}
+      <div class="list-group list-group-flush" id="incidentList">
+        {% for inc in incidents %}
+          <div class="list-group-item bg-transparent border-secondary py-2 px-3" id="inc-{{ loop.index0 }}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <span class="threat-dot
+                  {% if inc.severity == 'high' or inc.severity == 'critical' %}bg-danger
+                  {% elif inc.severity == 'medium' %}bg-warning
+                  {% else %}bg-info{% endif %}"></span>
+                <div>
+                  <div class="fw-semibold small">{{ inc.type | replace('_', ' ') | title }}</div>
+                  <div class="text-muted" style="font-size:0.75rem;">
+                    From: {{ inc.source_ip or '—' }}
+                    {% if inc.detail %}&mdash; {{ inc.detail }}{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                <div class="text-end">
+                  <span class="badge
+                    {% if inc.severity == 'critical' %}bg-danger
+                    {% elif inc.severity == 'high' %}bg-warning text-dark
+                    {% elif inc.severity == 'medium' %}bg-info text-dark
+                    {% else %}bg-secondary{% endif %}">
+                    {{ inc.severity | upper }}
+                  </span>
+                  <div class="text-muted mt-1" style="font-size:0.7rem;">
+                    {{ (inc.timestamp or '')[:16].replace('T',' ') }}
+                  </div>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        onclick="clearOneIncident({{ loop.index0 }}, this)"
+                        title="Dismiss">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center text-muted py-5" id="noIncidents">
+        <i class="bi bi-shield-check fs-2 d-block mb-2"></i>
+        No incidents recorded. Live Guard will alert here when threats are detected.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/threats.js') }}"></script>
+<script>
+const CSRF = document.querySelector('input[name="csrf_token"]')?.value
+           || "{{ csrf_token }}";
+
+async function clearOneIncident(index, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+  const res = await fetch('/api/threats/incidents/clear-one', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({csrf_token: CSRF, index: index})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    const row = document.getElementById('inc-' + index);
+    row.style.transition = 'opacity 0.3s';
+    row.style.opacity = '0';
+    setTimeout(() => {
+      row.remove();
+      // Renumber remaining rows
+      document.querySelectorAll('#incidentList .list-group-item').forEach((el, i) => {
+        el.id = 'inc-' + i;
+        el.querySelector('button').setAttribute('onclick', `clearOneIncident(${i}, this)`);
+      });
+      if (!document.querySelector('#incidentList .list-group-item')) {
+        document.getElementById('threatFeed').innerHTML =
+          '<div class="text-center text-muted py-5"><i class="bi bi-shield-check fs-2 d-block mb-2"></i>No incidents recorded.</div>';
+      }
+    }, 300);
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-x"></i>';
+    alert('Error: ' + (data.error || 'Failed to clear'));
+  }
+}
+
+async function clearAllIncidents() {
+  if (!confirm('Clear all incidents? This cannot be undone.')) return;
+  const res = await fetch('/api/threats/incidents/clear-all', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({csrf_token: CSRF})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    location.reload();
+  } else {
+    alert('Error: ' + (data.error || 'Failed to clear'));
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HybridSec Agent{% endblock %}</title>
+
+  <!-- Apply saved theme BEFORE CSS loads to prevent flash -->
+  <script>(function(){var t=localStorage.getItem('hs-theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/hybridsec.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="d-flex">
+
+  {% if g.user %}
+  <!-- ── Sidebar ────────────────────────────────────────── -->
+  <nav id="sidebar" class="d-flex flex-column flex-shrink-0 p-3">
+    <a href="{{ url_for('routes.dashboard') }}"
+       class="d-flex align-items-center mb-4 text-decoration-none text-white">
+      <i class="bi bi-shield-shaded fs-3 text-cyan me-2"></i>
+      <span class="fs-5 fw-bold">HybridSec</span>
+      <span class="badge bg-cyan text-dark ms-2 small">AGENT</span>
+    </a>
+
+    <ul class="nav nav-pills flex-column mb-auto gap-1">
+      <li>
+        <a href="{{ url_for('routes.dashboard') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.dashboard' %}active{% endif %}">
+          <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.scan') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.scan' %}active{% endif %}">
+          <i class="bi bi-search me-2"></i>Security Scan
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.risks') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.risks' %}active{% endif %}">
+          <i class="bi bi-exclamation-triangle me-2"></i>Risk Analysis
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.remediation') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.remediation' %}active{% endif %}">
+          <i class="bi bi-tools me-2"></i>Remediation
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.threats') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.threats' %}active{% endif %}">
+          <i class="bi bi-activity me-2"></i>Live Guard
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.actions') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.actions' %}active{% endif %}">
+          <i class="bi bi-lightning-charge me-2"></i>Actions
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.reports') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.reports' %}active{% endif %}">
+          <i class="bi bi-file-earmark-text me-2"></i>Reports
+        </a>
+      </li>
+
+      <li class="mt-3"><hr class="border-secondary my-1"></li>
+
+      <li>
+        <a href="{{ url_for('routes.profile') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.profile' %}active{% endif %}">
+          <i class="bi bi-building me-2"></i>SME Profile
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.audit_log') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.audit_log' %}active{% endif %}">
+          <i class="bi bi-journal-text me-2"></i>Audit Log
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('routes.settings') }}"
+           class="nav-link text-white {% if request.endpoint == 'routes.settings' %}active{% endif %}">
+          <i class="bi bi-gear me-2"></i>Settings
+        </a>
+      </li>
+    </ul>
+
+    <!-- Theme Toggle -->
+    <div class="mb-3">
+      <button id="themeToggle" onclick="toggleTheme()"
+              class="w-100 d-flex align-items-center justify-content-center gap-2"
+              title="Switch theme">
+        <!-- Sun icon (shown in dark mode → click for light) -->
+        <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <!-- Moon icon (shown in light mode → click for dark) -->
+        <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="display:none;">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/>
+        </svg>
+        <span id="themeLabel">Light Mode</span>
+      </button>
+    </div>
+
+    <div class="border-top border-secondary pt-3 mt-3">
+      <div class="d-flex align-items-center gap-2">
+        <div class="avatar-circle">{{ g.user.username[0].upper() }}</div>
+        <div class="flex-grow-1">
+          <div class="text-white fw-semibold small">{{ g.user.username }}</div>
+          <div class="text-muted" style="font-size:0.72rem;">Administrator</div>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="text-muted" title="Logout">
+          <i class="bi bi-box-arrow-right fs-5"></i>
+        </a>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  <!-- ── Main / page content ─────────────────────────────── -->
+  <main class="flex-grow-1 overflow-auto {% if g.user %}p-4{% endif %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+              {{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+</div><!-- /.d-flex -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function toggleTheme() {
+  var html  = document.documentElement;
+  var cur   = html.getAttribute('data-bs-theme') || 'dark';
+  var next  = cur === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-bs-theme', next);
+  localStorage.setItem('hs-theme', next);
+  _syncThemeBtn(next);
+}
+
+function _syncThemeBtn(theme) {
+  var sun   = document.getElementById('iconSun');
+  var moon  = document.getElementById('iconMoon');
+  var label = document.getElementById('themeLabel');
+  if (!sun) return;
+  if (theme === 'dark') {
+    sun.style.display  = '';
+    moon.style.display = 'none';
+    label.textContent  = 'Light Mode';
+  } else {
+    sun.style.display  = 'none';
+    moon.style.display = '';
+    label.textContent  = 'Dark Mode';
+  }
+}
+
+// Sync button on load (theme already applied by head script)
+_syncThemeBtn(document.documentElement.getAttribute('data-bs-theme') || 'dark');
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

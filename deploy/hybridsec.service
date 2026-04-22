@@ -1,0 +1,26 @@
+[Unit]
+Description=HybridSec Agent — Linux Security Platform
+Documentation=https://github.com/Rangana666/HybridSec-Project
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/hybridsec
+ExecStart=/opt/hybridsec/venv/bin/python3 /opt/hybridsec/run.py --https
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hybridsec
+
+# Prevent privilege escalation attacks
+NoNewPrivileges=false
+PrivateTmp=true
+
+# Environment
+EnvironmentFile=/opt/hybridsec/.env
+
+[Install]
+WantedBy=multi-user.target

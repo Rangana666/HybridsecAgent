@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+{% block title %}Actions — HybridSec{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="fw-bold mb-0">Actions</h4>
+    <p class="text-muted small mb-0">Manage firewall rules and SSH configuration directly from the dashboard.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ══════════════════════════════════════════════════════
+       FIREWALL CARD
+  ══════════════════════════════════════════════════════ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-lock me-1"></i>Firewall (UFW)</span>
+        <div class="d-flex align-items-center gap-3">
+          <span id="fwStatusBadge" class="badge bg-secondary">Loading…</span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small" id="fwToggleLabel">—</span>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="fwToggle" style="cursor:pointer;" disabled>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="row g-3">
+
+          <!-- Open Ports Table -->
+          <div class="col-lg-7">
+            <div class="small fw-semibold text-muted mb-2"><i class="bi bi-list-ul me-1"></i>Current Rules</div>
+            <div id="fwPortsWrapper">
+              <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>
+            </div>
+          </div>
+
+          <!-- Add Port Form -->
+          <div class="col-lg-5">
+            <div class="small fw-semibold text-muted mb-2"><i class="bi bi-plus-circle me-1"></i>Add / Remove Rule</div>
+            <div class="card bg-dark border-secondary p-3">
+              <div class="mb-2">
+                <label class="form-label small mb-1">Port Number</label>
+                <input type="number" class="form-control form-control-sm bg-dark text-white border-secondary"
+                       id="fwPortInput" placeholder="e.g. 8080" min="1" max="65535">
+              </div>
+              <div class="mb-2">
+                <label class="form-label small mb-1">Protocol</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" id="fwProtoInput">
+                  <option value="tcp">TCP</option>
+                  <option value="udp">UDP</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small mb-1">Action</label>
+                <select class="form-select form-select-sm bg-dark text-white border-secondary" id="fwActionInput">
+                  <option value="allow">Allow (open port)</option>
+                  <option value="deny">Deny (block port)</option>
+                  <option value="delete">Delete rule</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-cyan w-100" id="btnFwApply">
+                <i class="bi bi-check-circle me-1"></i>Apply Rule
+              </button>
+              <div id="fwRuleResult" class="mt-2 small"></div>
+            </div>
+
+            <!-- Quick common ports -->
+            <div class="small fw-semibold text-muted mt-3 mb-2"><i class="bi bi-lightning me-1"></i>Quick Allow</div>
+            <div class="d-flex flex-wrap gap-2">
+              {% for label, port, proto in [('SSH 22','22','tcp'),('HTTP 80','80','tcp'),('HTTPS 443','443','tcp'),('MySQL 3306','3306','tcp'),('PostgreSQL 5432','5432','tcp'),('DNS 53','53','udp')] %}
+              <button class="btn btn-sm btn-outline-secondary quick-port-btn"
+                      data-port="{{ port }}" data-proto="{{ proto }}">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SSH CARD
+  ══════════════════════════════════════════════════════ -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header small fw-semibold text-muted">
+        <i class="bi bi-terminal me-1"></i>SSH Management
+      </div>
+      <div class="card-body">
+        <div class="row g-4">
+
+          <!-- SSH Security Settings -->
+          <div class="col-lg-6">
+            <div class="small fw-semibold text-muted mb-3"><i class="bi bi-sliders me-1"></i>Security Settings</div>
+            <div id="sshSettingsWrapper">
+              <div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading…</div>
+            </div>
+          </div>
+
+          <!-- SSH Key Pair Generator -->
+          <div class="col-lg-6">
+            <div class="small fw-semibold text-muted mb-3"><i class="bi bi-key me-1"></i>Key Pair Generator</div>
+
+            <!-- AWS EC2 notice -->
+            <div class="alert alert-info py-2 px-3 small mb-3">
+              <i class="bi bi-cloud me-1"></i>
+              <strong>AWS EC2:</strong> Use <code>ubuntu</code> (Ubuntu AMI) or <code>ec2-user</code> (Amazon Linux).
+              The user must already exist on the server.
+            </div>
+
+            <div class="card bg-dark border-secondary p-3">
+
+              <div class="mb-2">
+                <label class="form-label small mb-1">Linux Username</label>
+                <div class="d-flex gap-2">
+                  <input type="text" class="form-control form-control-sm bg-dark text-white border-secondary"
+                         id="keygenUser" placeholder="e.g. ubuntu" pattern="[a-z_][a-z0-9_\-]{0,31}">
+                  <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                          id="userSelect" style="max-width:140px;" title="Pick an existing user">
+                    <option value="">— existing users —</option>
+                  </select>
+                </div>
+                <div class="text-muted mt-1" style="font-size:0.7rem;">
+                  Must be an existing user on this server.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="addToAuth" checked>
+                  <label class="form-check-label small" for="addToAuth">
+                    Automatically add public key to <code>~/.ssh/authorized_keys</code>
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-sm btn-cyan w-100" id="btnKeygen">
+                <i class="bi bi-key-fill me-1"></i>Generate RSA 4096-bit Key Pair
+              </button>
+
+              <!-- Result panel (hidden initially) -->
+              <div id="keygenResult" class="mt-3" style="display:none;">
+                <div class="small fw-semibold text-success mb-2">
+                  <i class="bi bi-check-circle me-1"></i>Key pair generated!
+                </div>
+                <div id="authKeyStatus" class="small mb-2"></div>
+
+                <div class="mb-2">
+                  <div class="text-muted small mb-1">Public Key (saved to server)</div>
+                  <textarea class="form-control form-control-sm bg-dark text-white border-secondary font-monospace"
+                            id="pubKeyDisplay" rows="3" readonly style="font-size:0.65rem; resize:none;"></textarea>
+                  <button class="btn btn-sm btn-outline-secondary mt-1" onclick="copyPubKey()">
+                    <i class="bi bi-clipboard me-1"></i>Copy
+                  </button>
+                </div>
+
+                <!-- Manual add instruction (shown when auto-add fails) -->
+                <div id="manualAddGuide" class="alert alert-warning py-2 px-2 small mt-2" style="display:none;">
+                  <strong>Manual step required:</strong> Run this on the server to add the key:<br>
+                  <code id="manualAddCmd" class="text-dark" style="font-size:0.7rem; word-break:break-all;"></code>
+                </div>
+
+                <a id="btnDownloadKey" href="/api/actions/ssh/download-key"
+                   class="btn btn-sm btn-warning w-100 mt-2">
+                  <i class="bi bi-download me-1"></i>Download Private Key (.pem)
+                </a>
+                <div class="text-muted mt-1" style="font-size:0.7rem;">
+                  ⚠ Download once — key is purged from server after download.
+                </div>
+              </div>
+              <div id="keygenError" class="alert alert-danger mt-2 small py-2 px-2" style="display:none;"></div>
+            </div>
+
+            <!-- SSH Usage Guide -->
+            <div class="card bg-dark border-secondary p-3 mt-3">
+              <div class="small fw-semibold text-muted mb-2"><i class="bi bi-book me-1"></i>How to Connect with Key</div>
+              <div class="small text-muted mb-2">After downloading the <code>.pem</code> file:</div>
+              <ol class="small text-muted ps-3 mb-2" style="line-height:1.8;">
+                <li>Set correct permissions on your local machine:<br>
+                  <code class="text-cyan">chmod 400 username-hybridsec.pem</code>
+                </li>
+                <li>Connect using SSH:<br>
+                  <code class="text-cyan" id="sshConnectCmd">ssh -i username-hybridsec.pem user@&lt;server-ip&gt;</code>
+                </li>
+                <li>On <strong>Windows</strong> (PuTTY): Convert .pem → .ppk using PuTTYgen,<br>
+                  then load the .ppk in PuTTY → Connection → SSH → Auth.
+                </li>
+                <li>Once key login works, disable password auth in SSH Settings above for maximum security.</li>
+              </ol>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="actionsToast" class="toast align-items-center text-white border-0 bg-secondary" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="actionsToastBody">…</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CSRF = "{{ csrf_token }}";
+
+// ── Toast helper ──────────────────────────────────────────────
+function toast(msg, type = "secondary") {
+  const el = document.getElementById("actionsToast");
+  el.className = `toast align-items-center text-white border-0 bg-${type}`;
+  document.getElementById("actionsToastBody").textContent = msg;
+  bootstrap.Toast.getOrCreateInstance(el, {delay: 4000}).show();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FIREWALL
+// ══════════════════════════════════════════════════════════════
+
+async function loadFirewall() {
+  try {
+    const d = await (await fetch("/api/actions/firewall", {credentials:"include"})).json();
+    if (!d.ok) { return; }
+
+    // Status badge + toggle
+    const badge = document.getElementById("fwStatusBadge");
+    const toggle = document.getElementById("fwToggle");
+    const label  = document.getElementById("fwToggleLabel");
+
+    badge.textContent  = d.enabled ? "Active" : "Inactive";
+    badge.className    = `badge ${d.enabled ? "bg-success" : "bg-danger"}`;
+    toggle.checked     = d.enabled;
+    toggle.disabled    = false;
+    label.textContent  = d.enabled ? "Enabled" : "Disabled";
+
+    // Ports table
+    const wrap = document.getElementById("fwPortsWrapper");
+    if (!d.ports || d.ports.length === 0) {
+      wrap.innerHTML = '<div class="text-muted small py-3 text-center">No rules found.</div>';
+      return;
+    }
+
+    let html = `<div class="table-responsive">
+      <table class="table table-dark table-hover mb-0 small">
+        <thead><tr class="text-muted"><th>Port / Protocol</th><th>Action</th><th></th></tr></thead>
+        <tbody>`;
+    for (const p of d.ports) {
+      const [portPart, protoPart] = p.port_proto.includes("/")
+        ? p.port_proto.split("/") : [p.port_proto, "tcp"];
+      const actionBadge = p.action === "ALLOW"
+        ? '<span class="badge bg-success">ALLOW</span>'
+        : '<span class="badge bg-danger">DENY</span>';
+      html += `<tr>
+        <td class="font-monospace">${escHtml(p.port_proto)}</td>
+        <td>${actionBadge}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-danger py-0"
+            onclick="deletePort('${escHtml(portPart)}','${escHtml(protoPart || "tcp")}')">
+            <i class="bi bi-trash3"></i>
+          </button>
+        </td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+    wrap.innerHTML = html;
+
+  } catch(e) {
+    document.getElementById("fwPortsWrapper").innerHTML =
+      `<div class="text-danger small">Could not load firewall status.</div>`;
+  }
+}
+
+document.getElementById("fwToggle").addEventListener("change", async function() {
+  this.disabled = true;
+  const enable = this.checked;
+  try {
+    const d = await (await fetch("/api/actions/firewall/toggle", {
+      method:"POST", credentials:"include",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({csrf_token: CSRF, enable}),
+    })).json();
+    if (d.ok) {
+      toast(`Firewall ${enable ? "enabled" : "disabled"}`, enable ? "success" : "warning");
+      setTimeout(loadFirewall, 800);
+    } else {
+      toast("Error: " + (d.error || "unknown"), "danger");
+      this.checked = !enable;
+    }
+  } catch(e) { toast("Request failed", "danger"); this.checked = !enable; }
+  this.disabled = false;
+});
+
+document.getElementById("btnFwApply").addEventListener("click", async () => {
+  const port   = document.getElementById("fwPortInput").value.trim();
+  const proto  = document.getElementById("fwProtoInput").value;
+  const action = document.getElementById("fwActionInput").value;
+  const resultEl = document.getElementById("fwRuleResult");
+
+  if (!port) { resultEl.innerHTML = '<span class="text-danger">Enter a port number.</span>'; return; }
+
+  resultEl.innerHTML = '<span class="text-muted">Applying…</span>';
+  try {
+    const d = await (await fetch("/api/actions/firewall/port", {
+      method:"POST", credentials:"include",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({csrf_token: CSRF, port, proto, action}),
+    })).json();
+    if (d.ok) {
+      resultEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>Rule applied.</span>`;
+      toast(`${action} ${port}/${proto} applied`, "success");
+      setTimeout(loadFirewall, 600);
+    } else {
+      resultEl.innerHTML = `<span class="text-danger">${escHtml(d.error || "Failed")}</span>`;
+    }
+  } catch(e) { resultEl.innerHTML = `<span class="text-danger">Request failed.</span>`; }
+});
+
+async function deletePort(port, proto) {
+  if (!confirm(`Remove allow rule for ${port}/${proto}?`)) return;
+  const d = await (await fetch("/api/actions/firewall/port", {
+    method:"POST", credentials:"include",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({csrf_token: CSRF, port, proto, action:"delete"}),
+  })).json();
+  if (d.ok) { toast(`Rule for ${port}/${proto} removed`, "success"); setTimeout(loadFirewall, 600); }
+  else toast("Delete failed: " + (d.error || ""), "danger");
+}
+
+// Quick-allow buttons
+document.querySelectorAll(".quick-port-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const port  = btn.dataset.port;
+    const proto = btn.dataset.proto;
+    btn.disabled = true;
+    const d = await (await fetch("/api/actions/firewall/port", {
+      method:"POST", credentials:"include",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({csrf_token: CSRF, port, proto, action:"allow"}),
+    })).json();
+    btn.disabled = false;
+    if (d.ok) { toast(`Allowed ${port}/${proto}`, "success"); setTimeout(loadFirewall, 600); }
+    else toast("Failed: " + (d.error || ""), "danger");
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+//  SSH SETTINGS
+// ══════════════════════════════════════════════════════════════
+
+const SSH_SETTINGS = [
+  { key:"permit_root_login",      label:"Permit Root Login",        setting:"PermitRootLogin",
+    type:"select", options:["yes","no","prohibit-password"],
+    hint:"'no' = block root SSH entirely (recommended)." },
+  { key:"password_auth",          label:"Password Authentication",  setting:"PasswordAuthentication",
+    type:"toggle", hint:"Disable after setting up key-based auth." },
+  { key:"pubkey_auth",            label:"Public Key Auth",          setting:"PubkeyAuthentication",
+    type:"toggle", hint:"Must be 'yes' when using key pairs." },
+  { key:"x11_forwarding",         label:"X11 Forwarding",           setting:"X11Forwarding",
+    type:"toggle", hint:"Disable on servers — not needed." },
+  { key:"permit_empty_passwords", label:"Permit Empty Passwords",   setting:"PermitEmptyPasswords",
+    type:"toggle", hint:"Always 'no'." },
+  { key:"max_auth_tries",         label:"Max Auth Tries",           setting:"MaxAuthTries",
+    type:"number", hint:"Recommended: 3. Limits brute-force." },
+  { key:"login_grace_time",       label:"Login Grace Time (s)",     setting:"LoginGraceTime",
+    type:"text",   hint:"Seconds before unauthenticated sessions close." },
+];
+
+async function loadSSH() {
+  try {
+    const d = await (await fetch("/api/actions/ssh", {credentials:"include"})).json();
+    if (!d.ok) return;
+
+    // Update SSH connect command hint
+    const cmd = document.getElementById("sshConnectCmd");
+    if (cmd) cmd.textContent = `ssh -i username-hybridsec.pem user@<server-ip> -p ${d.port}`;
+
+    const wrap = document.getElementById("sshSettingsWrapper");
+    let html = `<table class="table table-dark table-sm mb-0 small">
+      <thead><tr class="text-muted"><th>Setting</th><th>Current Value</th><th>Change</th></tr></thead>
+      <tbody>`;
+
+    for (const s of SSH_SETTINGS) {
+      const cur = d[s.key] || "unknown";
+      const curBadge = _sshBadge(s.setting, cur);
+
+      let inputHtml = "";
+      if (s.type === "toggle") {
+        inputHtml = `
+          <select class="form-select form-select-sm bg-dark text-white border-secondary ssh-setting-input"
+                  data-setting="${s.setting}" style="width:90px;">
+            <option value="yes" ${cur==="yes"?"selected":""}>yes</option>
+            <option value="no"  ${cur==="no" ?"selected":""}>no</option>
+          </select>`;
+      } else if (s.type === "select") {
+        inputHtml = `<select class="form-select form-select-sm bg-dark text-white border-secondary ssh-setting-input"
+                  data-setting="${s.setting}" style="width:160px;">`;
+        for (const o of s.options) {
+          inputHtml += `<option value="${o}" ${cur===o?"selected":""}>${o}</option>`;
+        }
+        inputHtml += `</select>`;
+      } else {
+        inputHtml = `<input type="${s.type === "number" ? "number" : "text"}"
+          class="form-control form-control-sm bg-dark text-white border-secondary ssh-setting-input"
+          data-setting="${s.setting}" value="${escHtml(cur)}" style="width:90px;">`;
+      }
+
+      html += `<tr>
+        <td>
+          <div class="fw-semibold">${s.label}</div>
+          <div class="text-muted" style="font-size:0.68rem;">${s.hint}</div>
+        </td>
+        <td>${curBadge}</td>
+        <td>
+          <div class="d-flex gap-1 align-items-center">
+            ${inputHtml}
+            <button class="btn btn-sm btn-outline-cyan ssh-apply-btn" data-setting="${s.setting}">
+              <i class="bi bi-check2"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+    wrap.innerHTML = html;
+
+    // Bind apply buttons
+    wrap.querySelectorAll(".ssh-apply-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const setting = btn.dataset.setting;
+        const input   = wrap.querySelector(`.ssh-setting-input[data-setting="${setting}"]`);
+        const value   = input ? input.value.trim() : "";
+        if (!value) { toast("Enter a value", "warning"); return; }
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        try {
+          const d = await (await fetch("/api/actions/ssh/configure", {
+            method:"POST", credentials:"include",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({csrf_token: CSRF, setting, value}),
+          })).json();
+          if (d.ok) { toast(d.message || "Applied", "success"); setTimeout(loadSSH, 800); }
+          else toast("Error: " + (d.error || "failed"), "danger");
+        } catch(e) { toast("Request failed", "danger"); }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2"></i>';
+      });
+    });
+
+  } catch(e) {
+    document.getElementById("sshSettingsWrapper").innerHTML =
+      `<div class="text-danger small">Could not load SSH config. Check server permissions.</div>`;
+  }
+}
+
+function _sshBadge(setting, val) {
+  const v = (val || "").toLowerCase();
+  const danger  = ["yes"];
+  const success = ["no", "prohibit-password"];
+  const DANGER_SETTINGS  = ["PermitRootLogin","PasswordAuthentication","X11Forwarding","PermitEmptyPasswords"];
+  const SUCCESS_SETTINGS = ["PubkeyAuthentication"];
+
+  if (v === "unknown") return `<span class="badge bg-secondary">unknown</span>`;
+
+  if (SUCCESS_SETTINGS.includes(setting)) {
+    return `<span class="badge ${v==="yes"?"bg-success":"bg-danger"}">${val}</span>`;
+  }
+  if (DANGER_SETTINGS.includes(setting)) {
+    return `<span class="badge ${success.includes(v)?"bg-success":"bg-danger"}">${val}</span>`;
+  }
+  return `<span class="badge bg-secondary">${escHtml(val)}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SSH KEY GENERATION
+// ══════════════════════════════════════════════════════════════
+
+// Load existing system users into the dropdown
+async function loadSystemUsers() {
+  try {
+    const d = await (await fetch("/api/actions/ssh/users", {credentials:"include"})).json();
+    const sel = document.getElementById("userSelect");
+    if (d.ok && d.users.length) {
+      d.users.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.username;
+        opt.textContent = `${u.username} (${u.home})`;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) {}
+}
+
+document.getElementById("userSelect").addEventListener("change", function() {
+  if (this.value) document.getElementById("keygenUser").value = this.value;
+});
+
+document.getElementById("btnKeygen").addEventListener("click", async () => {
+  const user    = document.getElementById("keygenUser").value.trim();
+  const addAuth = document.getElementById("addToAuth").checked;
+  const errEl   = document.getElementById("keygenError");
+  const resEl   = document.getElementById("keygenResult");
+
+  errEl.style.display = "none";
+  resEl.style.display = "none";
+
+  if (!user) { errEl.textContent = "Enter a Linux username."; errEl.style.display = "block"; return; }
+
+  const btn = document.getElementById("btnKeygen");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating…';
+
+  try {
+    const d = await (await fetch("/api/actions/ssh/keygen", {
+      method:"POST", credentials:"include",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({csrf_token: CSRF, username: user, add_to_authorized_keys: addAuth}),
+    })).json();
+
+    if (d.ok) {
+      document.getElementById("pubKeyDisplay").value = d.public_key;
+      resEl.style.display = "block";
+
+      // Show authorized_keys status
+      const authStat = document.getElementById("authKeyStatus");
+      const manualGuide = document.getElementById("manualAddGuide");
+      const manualCmd   = document.getElementById("manualAddCmd");
+
+      if (d.auth_key_added) {
+        authStat.innerHTML =
+          `<span class="text-success"><i class="bi bi-check-circle me-1"></i>` +
+          `Public key added to <code>${d.home_dir}/.ssh/authorized_keys</code></span>`;
+        manualGuide.style.display = "none";
+      } else if (addAuth) {
+        authStat.innerHTML =
+          `<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>` +
+          `Auto-add failed${d.auth_key_error ? ": " + escHtml(d.auth_key_error) : ""}. ` +
+          `Add manually using the command below.</span>`;
+        manualCmd.textContent =
+          `echo '${d.public_key}' >> ${d.home_dir}/.ssh/authorized_keys && ` +
+          `chmod 600 ${d.home_dir}/.ssh/authorized_keys`;
+        manualGuide.style.display = "block";
+      } else {
+        authStat.innerHTML =
+          `<span class="text-muted">Public key not added automatically. Copy and add it manually.</span>`;
+        manualCmd.textContent =
+          `mkdir -p ${d.home_dir}/.ssh && echo '${d.public_key}' >> ${d.home_dir}/.ssh/authorized_keys && chmod 600 ${d.home_dir}/.ssh/authorized_keys`;
+        manualGuide.style.display = "block";
+      }
+
+      // Update SSH connect command
+      const cmd = document.getElementById("sshConnectCmd");
+      if (cmd) cmd.textContent = `ssh -i ${user}-hybridsec.pem ${user}@<server-ip>`;
+
+      toast("Key pair generated! Download your private key.", "success");
+    } else {
+      errEl.innerHTML = `<i class="bi bi-x-circle me-1"></i>${escHtml(d.error || "Key generation failed.")}`;
+      errEl.style.display = "block";
+    }
+  } catch(e) {
+    errEl.textContent = "Request failed: " + e.message;
+    errEl.style.display = "block";
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-key-fill me-1"></i>Generate RSA 4096-bit Key Pair';
+});
+
+function copyPubKey() {
+  const ta = document.getElementById("pubKeyDisplay");
+  navigator.clipboard.writeText(ta.value).then(() => toast("Public key copied", "success"));
+}
+
+// ── Util ──────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ── Init ──────────────────────────────────────────────────────
+loadFirewall();
+loadSSH();
+loadSystemUsers();
+</script>
+{% endblock %}
