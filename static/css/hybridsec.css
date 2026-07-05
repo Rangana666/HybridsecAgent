@@ -270,12 +270,14 @@ a:hover { color: var(--hs-cyan-dark); }
 ═══════════════════════════════════════════════════════════ */
 
 [data-bs-theme="light"] {
-  --hs-bg:       #f0f4f8;
+  --hs-bg:       #f0f4ff;
   --hs-surface:  #ffffff;
-  --hs-surface2: #f3f6fa;
-  --hs-border:   #dee2e6;
-  --hs-text:     #1a202c;
-  --hs-muted:    #6c757d;
+  --hs-surface2: #f8fafc;
+  --hs-border:   #e2e8f0;
+  --hs-text:     #1e293b;
+  --hs-muted:    #64748b;
+  --hs-cyan:     #6366f1;
+  --hs-cyan-dark:#4f46e5;
 }
 
 [data-bs-theme="light"] html,
