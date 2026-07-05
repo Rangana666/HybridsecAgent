@@ -284,18 +284,34 @@ a:hover { color: var(--hs-cyan-dark); }
   color: var(--hs-text) !important;
 }
 
-/* Sidebar stays dark in both modes */
+/* Sidebar is light and clean in light mode */
 [data-bs-theme="light"] #sidebar {
-  background-color: #161b22 !important;
-  border-right-color: #30363d !important;
+  background-color: #ffffff !important;
+  border-right-color: #e2e8f0 !important;
+}
+[data-bs-theme="light"] #sidebar .nav-link {
+  color: #475569 !important;
 }
 [data-bs-theme="light"] #sidebar .nav-link:hover {
-  background-color: #21262d !important;
-  color: var(--hs-cyan) !important;
+  background-color: #f0f4ff !important;
+  color: #6366f1 !important;
 }
 [data-bs-theme="light"] #sidebar .nav-link.active {
-  background-color: rgba(0,212,255,0.15) !important;
-  color: var(--hs-cyan) !important;
+  background: linear-gradient(135deg, #ede9fe, #dbeafe) !important;
+  color: #4f46e5 !important;
+  font-weight: 600;
+}
+[data-bs-theme="light"] #sidebar span.fs-5 {
+  color: #1e293b !important;
+}
+[data-bs-theme="light"] #sidebar .text-white {
+  color: #1e293b !important;
+}
+[data-bs-theme="light"] #sidebar .text-muted {
+  color: #94a3b8 !important;
+}
+[data-bs-theme="light"] #sidebar hr {
+  border-color: #e2e8f0 !important;
 }
 
 /* Cards */
@@ -413,4 +429,15 @@ a:hover { color: var(--hs-cyan-dark); }
   border-color: var(--hs-cyan);
   color: var(--hs-cyan);
   background: rgba(0,212,255,0.08);
+}
+
+[data-bs-theme="light"] #themeToggle {
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+  background-color: #f8fafc !important;
+}
+[data-bs-theme="light"] #themeToggle:hover {
+  border-color: #6366f1 !important;
+  color: #6366f1 !important;
+  background-color: #f0f4ff !important;
 }
