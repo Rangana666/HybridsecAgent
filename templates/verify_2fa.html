@@ -1,19 +1,80 @@
 {% extends "base.html" %}
 {% block title %}Two-Factor Authentication — HybridSec{% endblock %}
 
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .verify-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(99,102,241,0.08);
+    width: 420px;
+    overflow: hidden;
+  }
+  .hs-card-body { padding: 40px 32px; }
+
+  .hs-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5rem;
+  }
+  .hs-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+  }
+
+  .btn-verify {
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff; border: none; width: 100%;
+    padding: 13px; border-radius: 12px;
+    font-weight: 700; font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-verify:hover { opacity: 0.92; color: #fff; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="login-wrapper d-flex align-items-center justify-content-center vh-100">
-  <div class="login-card card shadow-lg" style="width:400px;">
-    <div class="card-body p-5">
+<div class="verify-page">
+  <div class="hs-card">
+    <div class="hs-card-body">
+      
       <div class="text-center mb-4">
-        <i class="bi bi-phone text-cyan" style="font-size:2.5rem;"></i>
-        <h5 class="fw-bold mt-2">Two-Factor Authentication</h5>
+        <div style="width:60px; height:60px; border-radius:18px; background:linear-gradient(135deg,#ede9fe,#dbeafe); display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+          <i class="bi bi-shield-lock-fill" style="font-size:1.8rem; color:#6366f1;"></i>
+        </div>
+        <h5 class="fw-bold text-dark mb-1">Two-Factor Authentication</h5>
         <p class="text-muted small">Enter the 6-digit code from your authenticator app.</p>
       </div>
 
       {% if error %}
-        <div class="alert alert-danger py-2 small">
-          <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+        <div class="alert alert-danger py-2 small mb-4" style="border-radius:10px; background:#fee2e2; color:#ef4444; border:none; display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span>{{ error }}</span>
         </div>
       {% endif %}
 
@@ -21,19 +82,20 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="mb-4">
           <input type="text" name="otp_code"
-                 class="form-control form-control-lg text-center bg-dark border-secondary text-white"
-                 placeholder="000000" maxlength="6" required autofocus
-                 style="letter-spacing:0.5rem; font-size:1.6rem;">
+                 class="hs-input text-center"
+                 placeholder="000000" maxlength="6" required autofocus>
         </div>
-        <button type="submit" class="btn btn-cyan w-100 fw-semibold">
-          <i class="bi bi-check2-circle me-2"></i>Verify
+        <button type="submit" class="btn-verify">
+          <i class="bi bi-check2-circle"></i> Verify Code
         </button>
       </form>
-      <div class="text-center mt-3">
-        <a href="{{ url_for('auth.login') }}" class="text-muted small">
-          <i class="bi bi-arrow-left me-1"></i>Back to login
+      
+      <div class="text-center mt-4">
+        <a href="{{ url_for('auth.login') }}" class="text-muted small" style="text-decoration:none;">
+          <i class="bi bi-arrow-left me-1"></i>Back to Login
         </a>
       </div>
+      
     </div>
   </div>
 </div>

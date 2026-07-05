@@ -1,423 +1,465 @@
 {% extends "base.html" %}
-{% block title %}Settings — HybridSec{% endblock %}
+{% block title %}⚙️ Settings — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .settings-page { padding: 28px 32px; }
+
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
+
+  /* Input fields */
+  .hs-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+  .hs-select, .hs-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .hs-select:focus, .hs-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff; border: none; font-weight: 700; font-size: 0.82rem;
+    padding: 9px 16px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+  }
+  .btn-save:hover { opacity: 0.92; color: #fff; }
+
+  /* Tables */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table td { padding: 8px 12px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
+  .hs-table td.text-muted { color: #64748b !important; }
+
+  /* Integrations cards */
+  .integ-card {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .badge-config { background: #dcfce7; color: #16a34a; font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+  .badge-none   { background: #f1f5f9; color: #94a3b8; font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-  <h4 class="fw-bold mb-0">Settings</h4>
-  <p class="text-muted small mb-0">Account security, API keys, and alert notifications.</p>
-</div>
+<div class="settings-page">
 
-<div class="row g-3">
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">⚙️ Settings</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">Account security, API keys, and alert notifications.</p>
+    </div>
+  </div>
 
-  <!-- Account Info -->
-  <div class="col-lg-5">
-    <div class="card mb-3">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-person-circle me-1"></i>Account
-      </div>
-      <div class="card-body">
-        <table class="table table-sm table-dark mb-0 small">
-          <tr><td class="text-muted">Username</td>
-              <td class="fw-semibold">{{ user.username }}</td></tr>
-          <tr><td class="text-muted">Created</td>
-              <td>{{ (user.created_at or '')[:10] }}</td></tr>
-          <tr><td class="text-muted">Last Login</td>
-              <td>{{ (user.last_login or 'Never')[:16].replace('T',' ') }}</td></tr>
-          <tr><td class="text-muted">2FA</td>
-              <td>
+  <div class="row g-4">
+    <!-- Account Column -->
+    <div class="col-lg-5">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-person-circle"></i> Account Information</span>
+        </div>
+        <div class="card-body-custom p-0">
+          <table class="hs-table">
+            <tbody>
+              <tr><td class="text-muted">Username</td><td class="fw-bold">{{ user.username }}</td></tr>
+              <tr><td class="text-muted">Created</td><td>{{ (user.created_at or '')[:10] }}</td></tr>
+              <tr><td class="text-muted">Last Login</td><td>{{ (user.last_login or 'Never')[:16].replace('T',' ') }}</td></tr>
+              <tr><td class="text-muted">2FA Shield</td><td>
                 {% if user.totp_enabled %}
-                  <span class="badge bg-success"><i class="bi bi-check2 me-1"></i>Enabled</span>
+                  <span class="badge bg-success" style="font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:12px;"><i class="bi bi-check2"></i> Enabled</span>
                 {% else %}
-                  <span class="badge bg-secondary">Disabled</span>
+                  <span class="badge bg-secondary" style="font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:12px;">Disabled</span>
                 {% endif %}
               </td></tr>
-        </table>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2FA Setup -->
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-phone"></i> Two-Factor Authentication</span>
+        </div>
+        <div class="card-body-custom">
+          {% if user.totp_enabled %}
+            <p class="small text-muted mb-3">
+              2FA is active. Your account requires an authenticator code at each login session.
+            </p>
+            <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="action" value="disable">
+              <button type="submit" class="btn btn-sm btn-outline-warning w-100 fw-bold" style="border-radius:10px;"
+                      onclick="return confirm('Disable 2FA? Your account will be less secure.')">
+                <i class="bi bi-shield-x me-1"></i> Disable 2FA
+              </button>
+            </form>
+          {% else %}
+            <p class="small text-muted mb-3">
+              Enable 2FA to require a one-time code from your authenticator app at login.
+            </p>
+            <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-sm btn-success w-100 fw-bold" style="border-radius:10px; background:#16a34a; border:none; padding:7px 12px;">
+              <i class="bi bi-shield-lock me-1"></i> Setup 2FA
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- System Details -->
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-cpu"></i> System Overview</span>
+        </div>
+        <div class="card-body-custom" style="font-size:0.82rem; color:#475569; line-height:1.6;">
+          <div class="row g-2">
+            <div class="col-6">
+              <strong>Version:</strong><br>HybridSec Agent v1.0
+            </div>
+            <div class="col-6">
+              <strong>Autofix Protection:</strong><br>Backups Enabled
+            </div>
+          </div>
+          <div class="mt-3 pt-3" style="border-top:1px solid #f1f5f9; display:flex; gap:8px;">
+            <a href="{{ url_for('routes.audit_log') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.75rem;">
+              <i class="bi bi-journal-text me-1"></i> Audit Logs
+            </a>
+            <a href="{{ url_for('routes.dashboard') }}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:0.75rem;">
+              <i class="bi bi-speedometer2 me-1"></i> Dashboard
+            </a>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 2FA Card -->
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-phone me-1"></i>Two-Factor Authentication
-      </div>
-      <div class="card-body">
-        {% if user.totp_enabled %}
-          <p class="text-muted small mb-3">
-            2FA is active. Your account requires an authenticator code at each login.
-          </p>
-          <form method="POST" action="{{ url_for('auth.setup_2fa') }}">
+    <!-- Password Modification Column -->
+    <div class="col-lg-7">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-key"></i> Update Password</span>
+        </div>
+        <div class="card-body-custom">
+          <form method="POST" action="{{ url_for('auth.change_password') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" name="action" value="disable">
-            <button type="submit" class="btn btn-outline-warning btn-sm w-100"
-                    onclick="return confirm('Disable 2FA? Your account will be less secure.')">
-              <i class="bi bi-shield-x me-2"></i>Disable 2FA
+            <div class="mb-3">
+              <label class="hs-label" for="current_password">Current Password</label>
+              <input type="password" name="current_password" id="current_password" class="hs-input" required autocomplete="current-password">
+            </div>
+            <div class="mb-3">
+              <label class="hs-label" for="new_password">New Password</label>
+              <input type="password" name="new_password" id="new_password" class="hs-input" minlength="12" required placeholder="Minimum 12 characters" autocomplete="new-password">
+            </div>
+            <div class="mb-4">
+              <label class="hs-label" for="confirm_password">Confirm New Password</label>
+              <input type="password" name="confirm_password" id="confirm_password" class="hs-input" required autocomplete="new-password">
+            </div>
+            
+            <button type="submit" class="btn-save">
+              <i class="bi bi-save"></i> Change Password
             </button>
           </form>
-        {% else %}
-          <p class="text-muted small mb-3">
-            Enable 2FA to require a one-time code from your authenticator app at login.
-          </p>
-          <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-success btn-sm w-100">
-            <i class="bi bi-shield-lock me-2"></i>Enable 2FA
-          </a>
-        {% endif %}
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Change Password -->
-  <div class="col-lg-7">
-    <div class="card mb-3">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-key me-1"></i>Change Password
+  <!-- Integrations Section -->
+  <div id="integrations" class="mt-2">
+    <div class="hs-card">
+      <div class="card-header-custom">
+        <span><i class="bi bi-plug"></i> API Integrations &amp; Alert Channels</span>
+        <span class="{% if integ.openai_key_set or integ.openrouter_key_set or integ.gemini_key_set or integ.use_local_llm %}badge-config{% else %}badge-none{% endif %}">
+          {{ 'Configured' if (integ.openai_key_set or integ.openrouter_key_set or integ.gemini_key_set or integ.use_local_llm) else 'No credentials' }}
+        </span>
       </div>
-      <div class="card-body">
-        <form method="POST" action="{{ url_for('auth.change_password') }}">
+      <div class="card-body-custom">
+        <form method="POST" action="{{ url_for('routes.settings_integrations') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <div class="mb-3">
-            <label class="form-label small">Current Password</label>
-            <input type="password" name="current_password"
-                   class="form-control bg-dark border-secondary text-white" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small">New Password</label>
-            <input type="password" name="new_password"
-                   class="form-control bg-dark border-secondary text-white"
-                   minlength="12" required
-                   placeholder="Minimum 12 characters">
-          </div>
+          <input type="hidden" name="section" value="llm">
+
+          <!-- Provider Select -->
           <div class="mb-4">
-            <label class="form-label small">Confirm New Password</label>
-            <input type="password" name="confirm_password"
-                   class="form-control bg-dark border-secondary text-white" required>
+            <label class="hs-label" for="llmProvider">Active AI Context Provider</label>
+            <select name="LLM_PROVIDER" id="llmProvider" class="hs-select" onchange="showLlmPanel(this.value)">
+              <option value="openai"      {% if integ.llm_provider == 'openai'      %}selected{% endif %}>OpenAI (GPT-4o-mini)</option>
+              <option value="openrouter"  {% if integ.llm_provider == 'openrouter'  %}selected{% endif %}>OpenRouter (multi-model)</option>
+              <option value="gemini"      {% if integ.llm_provider == 'gemini'      %}selected{% endif %}>Google Gemini</option>
+              <option value="local"       {% if integ.llm_provider == 'local'       %}selected{% endif %}>Local LLaMA (Ollama)</option>
+            </select>
+            <div class="form-text text-muted mt-1 small">Selects which LLM handles context-aware risk scoring.</div>
           </div>
-          <button type="submit" class="btn btn-cyan fw-semibold">
-            <i class="bi bi-key me-2"></i>Update Password
-          </button>
+
+          <div class="row g-3 mb-4">
+            
+            <!-- OpenAI Panel -->
+            <div class="col-md-6 llm-panel" id="panel-openai">
+              <div class="integ-card">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-stars me-2 text-warning" style="font-size:1.1rem;"></i>
+                  <span class="fw-bold small text-dark">OpenAI Integration</span>
+                  {% if integ.openai_key_set %}<span class="badge bg-success ms-auto small">Saved</span>{% endif %}
+                </div>
+                <div class="mb-2">
+                  <label class="hs-label" for="openaiKey">API Key</label>
+                  <div class="input-group input-group-sm">
+                    <input type="password" name="OPENAI_API_KEY" id="openaiKey"
+                           class="form-control bg-light border-2 text-dark font-monospace"
+                           style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
+                           placeholder="{{ integ.openai_key_masked if integ.openai_key_set else 'sk-...' }}">
+                    <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('openaiKey',this)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 mt-3 align-items-center" id="openai-actions" style="{{ '' if integ.openai_key_set else 'display:none!important;' }}">
+                  <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="testLlmKey('openai',this)">
+                    <i class="bi bi-check2-circle me-1"></i>Test Connection
+                  </button>
+                  <span id="openai-test-result" class="small fw-bold"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- OpenRouter Panel -->
+            <div class="col-md-6 llm-panel" id="panel-openrouter" style="display:none;">
+              <div class="integ-card">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-diagram-3 me-2 text-primary" style="font-size:1.1rem;"></i>
+                  <span class="fw-bold small text-dark">OpenRouter Integration</span>
+                  {% if integ.openrouter_key_set %}<span class="badge bg-success ms-auto small">Saved</span>{% endif %}
+                </div>
+                <div class="mb-3">
+                  <label class="hs-label" for="orKey">API Key</label>
+                  <div class="input-group input-group-sm">
+                    <input type="password" name="OPENROUTER_API_KEY" id="orKey"
+                           class="form-control bg-light border-2 text-dark font-monospace"
+                           style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
+                           placeholder="{{ integ.openrouter_key_masked if integ.openrouter_key_set else 'sk-or-...' }}">
+                    <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('orKey',this)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="hs-label" for="orModel">Model Identifier</label>
+                  <input type="text" name="OPENROUTER_MODEL" id="orModel"
+                         class="form-control form-control-sm bg-light border-2 text-dark"
+                         style="border-radius:8px; border-color:#e2e8f0; padding:8px;"
+                         value="{{ integ.openrouter_model }}" placeholder="openai/gpt-4o-mini">
+                </div>
+                <div class="d-flex gap-2 mt-3 align-items-center" id="openrouter-actions" style="{{ '' if integ.openrouter_key_set else 'display:none!important;' }}">
+                  <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="testLlmKey('openrouter',this)">
+                    <i class="bi bi-check2-circle me-1"></i>Test Connection
+                  </button>
+                  <span id="openrouter-test-result" class="small fw-bold"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gemini Panel -->
+            <div class="col-md-6 llm-panel" id="panel-gemini" style="display:none;">
+              <div class="integ-card">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-gem me-2 text-danger" style="font-size:1.1rem;"></i>
+                  <span class="fw-bold small text-dark">Google Gemini Integration</span>
+                  {% if integ.gemini_key_set %}<span class="badge bg-success ms-auto small">Saved</span>{% endif %}
+                </div>
+                <div class="mb-3">
+                  <label class="hs-label" for="geminiKey">API Key</label>
+                  <div class="input-group input-group-sm">
+                    <input type="password" name="GEMINI_API_KEY" id="geminiKey"
+                           class="form-control bg-light border-2 text-dark font-monospace"
+                           style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
+                           placeholder="{{ integ.gemini_key_masked if integ.gemini_key_set else 'AIza...' }}">
+                    <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('geminiKey',this)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="hs-label" for="gemModel">Model</label>
+                  <input type="text" name="GEMINI_MODEL" id="gemModel"
+                         class="form-control form-control-sm bg-light border-2 text-dark"
+                         style="border-radius:8px; border-color:#e2e8f0; padding:8px;"
+                         value="{{ integ.gemini_model }}" placeholder="gemini-1.5-flash">
+                </div>
+                <div class="d-flex gap-2 mt-3 align-items-center" id="gemini-actions" style="{{ '' if integ.gemini_key_set else 'display:none!important;' }}">
+                  <button type="button" class="btn btn-sm btn-outline-primary" style="border-radius:8px;" onclick="testLlmKey('gemini',this)">
+                    <i class="bi bi-check2-circle me-1"></i>Test Connection
+                  </button>
+                  <span id="gemini-test-result" class="small fw-bold"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Local Panel -->
+            <div class="col-md-6 llm-panel" id="panel-local" style="display:none;">
+              <div class="integ-card">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-pc-display me-2 text-success" style="font-size:1.1rem;"></i>
+                  <span class="fw-bold small text-dark">Local LLaMA (Ollama)</span>
+                </div>
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" name="USE_LOCAL_LLM"
+                         id="useLocalLlm" value="true" {% if integ.use_local_llm %}checked{% endif %}>
+                  <label class="form-check-label small" for="useLocalLlm">Activate Ollama mode</label>
+                </div>
+                <div class="mb-2">
+                  <label class="hs-label" for="localLlmUrl">Ollama endpoint URL</label>
+                  <input type="text" name="LOCAL_LLM_URL" id="localLlmUrl"
+                         class="form-control form-control-sm bg-light border-2 text-dark"
+                         style="border-radius:8px; border-color:#e2e8f0; padding:8px;"
+                         value="{{ integ.local_llm_url }}" placeholder="http://localhost:11434/api/generate">
+                </div>
+                <div class="mb-2">
+                  <label class="hs-label" for="localLlmModel">Model Name</label>
+                  <input type="text" name="LOCAL_LLM_MODEL" id="localLlmModel"
+                         class="form-control form-control-sm bg-light border-2 text-dark"
+                         style="border-radius:8px; border-color:#e2e8f0; padding:8px;"
+                         value="{{ integ.local_llm_model }}" placeholder="llama3">
+                </div>
+              </div>
+            </div>
+
+            <!-- NVD CVE Panel -->
+            <div class="col-md-6">
+              <div class="integ-card">
+                <div class="d-flex align-items-center mb-3">
+                  <i class="bi bi-database-check me-2 text-info" style="font-size:1.1rem;"></i>
+                  <span class="fw-bold small text-dark">NVD CVE API</span>
+                  {% if integ.nvd_key_set %}<span class="badge bg-success ms-auto small">Saved</span>{% endif %}
+                </div>
+                <div>
+                  <label class="hs-label" for="nvdKey">NVD API Key (Optional)</label>
+                  <div class="input-group input-group-sm">
+                    <input type="password" name="NVD_API_KEY" id="nvdKey"
+                           class="form-control bg-light border-2 text-dark font-monospace"
+                           style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
+                           placeholder="{{ integ.nvd_key_masked if integ.nvd_key_set else 'Free key from nvd.nist.gov' }}">
+                    <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('nvdKey',this)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-sm btn-primary fw-bold" style="border-radius:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none; padding:7px 16px;">
+              <i class="bi bi-save me-1"></i> Save LLM Settings
+            </button>
+
+            {% if integ.openai_key_set %}
+            <button type="submit" name="remove_key_action" value="OPENAI_API_KEY" class="btn btn-sm btn-outline-danger" style="border-radius:10px; font-weight:700;"
+                    onclick="return confirm('Remove OpenAI key?')">
+              Remove OpenAI Key
+            </button>
+            {% endif %}
+            {% if integ.openrouter_key_set %}
+            <button type="submit" name="remove_key_action" value="OPENROUTER_API_KEY" class="btn btn-sm btn-outline-danger" style="border-radius:10px; font-weight:700;"
+                    onclick="return confirm('Remove OpenRouter key?')">
+              Remove OpenRouter Key
+            </button>
+            {% endif %}
+            {% if integ.gemini_key_set %}
+            <button type="submit" name="remove_key_action" value="GEMINI_API_KEY" class="btn btn-sm btn-outline-danger" style="border-radius:10px; font-weight:700;"
+                    onclick="return confirm('Remove Gemini key?')">
+              Remove Gemini Key
+            </button>
+            {% endif %}
+            {% if integ.nvd_key_set %}
+            <button type="submit" name="remove_key_action" value="NVD_API_KEY" class="btn btn-sm btn-outline-danger" style="border-radius:10px; font-weight:700;"
+                    onclick="return confirm('Remove NVD API key?')">
+              Remove NVD Key
+            </button>
+            {% endif %}
+          </div>
         </form>
       </div>
     </div>
-
-    <!-- System Info -->
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-cpu me-1"></i>System Information
-      </div>
-      <div class="card-body small text-muted">
-        <div class="row">
-          <div class="col-6">
-            <div class="mb-2"><span class="text-white">HybridSec Version</span><br>v1.0</div>
-            <div class="mb-2"><span class="text-white">Scoring Engine</span><br>Triple Hybrid (Rule 30% + ML 35% + LLM 35%)</div>
-          </div>
-          <div class="col-6">
-            <div class="mb-2"><span class="text-white">Session Timeout</span><br>8 hours</div>
-            <div class="mb-2"><span class="text-white">Auto-Fix Safety</span><br>Backup + Confirm required</div>
-          </div>
-        </div>
-        <hr class="border-secondary">
-        <div class="d-flex gap-2">
-          <a href="{{ url_for('routes.audit_log') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-journal-text me-1"></i>View Audit Log
-          </a>
-          <a href="{{ url_for('routes.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-speedometer2 me-1"></i>Dashboard
-          </a>
-        </div>
-      </div>
-    </div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- INTEGRATIONS                                              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div id="integrations" class="mt-4">
-  <h5 class="fw-semibold mb-3"><i class="bi bi-plug me-2 text-cyan"></i>API Integrations & Alerts</h5>
-
-  <div class="row g-3">
-
-    <!-- ── LLM Provider & API Keys ─────────────────────────── -->
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header small fw-semibold text-muted d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-robot me-1"></i>LLM Provider & API Keys</span>
-          <span class="badge {% if integ.openai_key_set or integ.openrouter_key_set or integ.gemini_key_set or integ.use_local_llm %}bg-success{% else %}bg-secondary{% endif %}">
-            {{ 'Configured' if (integ.openai_key_set or integ.openrouter_key_set or integ.gemini_key_set or integ.use_local_llm) else 'Not set' }}
-          </span>
-        </div>
-        <div class="card-body">
-          <form method="POST" action="{{ url_for('routes.settings_integrations') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" name="section" value="llm">
-
-            <!-- Provider selector -->
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Active LLM Provider</label>
-              <select name="LLM_PROVIDER" id="llmProvider" class="form-select bg-dark border-secondary text-white"
-                      onchange="showLlmPanel(this.value)">
-                <option value="openai"      {% if integ.llm_provider == 'openai'      %}selected{% endif %}>OpenAI (GPT-4o-mini)</option>
-                <option value="openrouter"  {% if integ.llm_provider == 'openrouter'  %}selected{% endif %}>OpenRouter (multi-model)</option>
-                <option value="gemini"      {% if integ.llm_provider == 'gemini'      %}selected{% endif %}>Google Gemini</option>
-                <option value="local"       {% if integ.llm_provider == 'local'       %}selected{% endif %}>Local LLaMA (Ollama)</option>
-              </select>
-              <div class="form-text text-muted">Selects which LLM is used for contextual vulnerability scoring (35% weight).</div>
-            </div>
-
-            <div class="row g-3">
-
-              <!-- OpenAI -->
-              <div class="col-md-6 llm-panel" id="panel-openai">
-                <div class="card bg-dark border-secondary h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="bi bi-stars me-2 text-warning"></i>
-                      <strong class="small">OpenAI</strong>
-                      {% if integ.openai_key_set %}<span class="badge bg-success ms-auto small">Key saved</span>{% endif %}
-                    </div>
-                    <label class="form-label small text-muted">API Key</label>
-                    <div class="input-group input-group-sm">
-                      <input type="password" name="OPENAI_API_KEY" id="openaiKey"
-                             class="form-control bg-dark border-secondary text-white font-monospace"
-                             placeholder="{{ integ.openai_key_masked if integ.openai_key_set else 'sk-...' }}">
-                      <button type="button" class="btn btn-outline-secondary" onclick="togglePw('openaiKey',this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                    <div class="form-text text-muted">Leave blank to keep existing key.</div>
-                    <div class="d-flex gap-2 mt-2" id="openai-actions" style="{{ '' if integ.openai_key_set else 'display:none!important;' }}">
-                      <button type="button" class="btn btn-outline-info btn-sm"
-                              onclick="testLlmKey('openai',this)">
-                        <i class="bi bi-check2-circle me-1"></i>Test Key
-                      </button>
-                      <span id="openai-test-result" class="small align-self-center"></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- OpenRouter -->
-              <div class="col-md-6 llm-panel" id="panel-openrouter" style="display:none;">
-                <div class="card bg-dark border-secondary h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="bi bi-diagram-3 me-2 text-info"></i>
-                      <strong class="small">OpenRouter</strong>
-                      {% if integ.openrouter_key_set %}<span class="badge bg-success ms-auto small">Key saved</span>{% endif %}
-                    </div>
-                    <label class="form-label small text-muted">API Key</label>
-                    <div class="input-group input-group-sm mb-2">
-                      <input type="password" name="OPENROUTER_API_KEY" id="orKey"
-                             class="form-control bg-dark border-secondary text-white font-monospace"
-                             placeholder="{{ integ.openrouter_key_masked if integ.openrouter_key_set else 'sk-or-...' }}">
-                      <button type="button" class="btn btn-outline-secondary" onclick="togglePw('orKey',this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                    <div class="d-flex gap-2 mb-2" id="openrouter-actions" style="{{ '' if integ.openrouter_key_set else 'display:none!important;' }}">
-                      <button type="button" class="btn btn-outline-info btn-sm"
-                              onclick="testLlmKey('openrouter',this)">
-                        <i class="bi bi-check2-circle me-1"></i>Test Key
-                      </button>
-                      <span id="openrouter-test-result" class="small align-self-center"></span>
-                    </div>
-                    <label class="form-label small text-muted">Model</label>
-                    <input type="text" name="OPENROUTER_MODEL"
-                           class="form-control form-control-sm bg-dark border-secondary text-white"
-                           value="{{ integ.openrouter_model }}"
-                           placeholder="openai/gpt-4o-mini">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Gemini -->
-              <div class="col-md-6 llm-panel" id="panel-gemini" style="display:none;">
-                <div class="card bg-dark border-secondary h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="bi bi-gem me-2 text-primary"></i>
-                      <strong class="small">Google Gemini</strong>
-                      {% if integ.gemini_key_set %}<span class="badge bg-success ms-auto small">Key saved</span>{% endif %}
-                    </div>
-                    <div class="alert alert-secondary py-1 small mb-2">
-                      Requires: <code>pip install google-generativeai</code>
-                    </div>
-                    <label class="form-label small text-muted">API Key</label>
-                    <div class="input-group input-group-sm mb-2">
-                      <input type="password" name="GEMINI_API_KEY" id="geminiKey"
-                             class="form-control bg-dark border-secondary text-white font-monospace"
-                             placeholder="{{ integ.gemini_key_masked if integ.gemini_key_set else 'AIza... or AQ...' }}">
-                      <button type="button" class="btn btn-outline-secondary" onclick="togglePw('geminiKey',this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                    <div class="d-flex gap-2 mb-2" id="gemini-actions" style="{{ '' if integ.gemini_key_set else 'display:none!important;' }}">
-                      <button type="button" class="btn btn-outline-info btn-sm"
-                              onclick="testLlmKey('gemini',this)">
-                        <i class="bi bi-check2-circle me-1"></i>Test Key
-                      </button>
-                      <span id="gemini-test-result" class="small align-self-center"></span>
-                    </div>
-                    <label class="form-label small text-muted">Model</label>
-                    <input type="text" name="GEMINI_MODEL"
-                           class="form-control form-control-sm bg-dark border-secondary text-white"
-                           value="{{ integ.gemini_model }}"
-                           placeholder="gemini-1.5-flash">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Local LLaMA -->
-              <div class="col-md-6 llm-panel" id="panel-local" style="display:none;">
-                <div class="card bg-dark border-secondary h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="bi bi-pc-display me-2 text-success"></i>
-                      <strong class="small">Local LLaMA (Ollama)</strong>
-                    </div>
-                    <div class="form-check form-switch mb-2">
-                      <input class="form-check-input" type="checkbox" name="USE_LOCAL_LLM"
-                             id="useLocalLlm" value="true"
-                             {% if integ.use_local_llm %}checked{% endif %}>
-                      <label class="form-check-label small" for="useLocalLlm">Enable local LLM</label>
-                    </div>
-                    <label class="form-label small text-muted">Ollama URL</label>
-                    <input type="text" name="LOCAL_LLM_URL"
-                           class="form-control form-control-sm bg-dark border-secondary text-white mb-2"
-                           value="{{ integ.local_llm_url }}"
-                           placeholder="http://localhost:11434/api/generate">
-                    <label class="form-label small text-muted">Model Name</label>
-                    <input type="text" name="LOCAL_LLM_MODEL"
-                           class="form-control form-control-sm bg-dark border-secondary text-white"
-                           value="{{ integ.local_llm_model }}"
-                           placeholder="llama3">
-                  </div>
-                </div>
-              </div>
-
-              <!-- NVD API Key -->
-              <div class="col-md-6">
-                <div class="card bg-dark border-secondary h-100">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                      <i class="bi bi-database-check me-2 text-warning"></i>
-                      <strong class="small">NVD CVE API</strong>
-                      {% if integ.nvd_key_set %}<span class="badge bg-success ms-auto small">Key saved</span>{% endif %}
-                    </div>
-                    <label class="form-label small text-muted">NVD API Key <span class="text-muted">(optional — increases rate limit)</span></label>
-                    <div class="input-group input-group-sm">
-                      <input type="password" name="NVD_API_KEY" id="nvdKey"
-                             class="form-control bg-dark border-secondary text-white font-monospace"
-                             placeholder="{{ integ.nvd_key_masked if integ.nvd_key_set else 'Free key from nvd.nist.gov' }}">
-                      <button type="button" class="btn btn-outline-secondary" onclick="togglePw('nvdKey',this)">
-                        <i class="bi bi-eye"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div><!-- /row -->
-
-            <div class="mt-3 d-flex gap-2 flex-wrap align-items-center">
-              <button type="submit" class="btn btn-cyan btn-sm fw-semibold">
-                <i class="bi bi-save me-1"></i>Save LLM Settings
-              </button>
-              <!-- Remove key buttons — only shown when a key is saved -->
-              {% if integ.openai_key_set %}
-              <form method="POST" action="{{ url_for('routes.settings_remove_key') }}" class="d-inline"
-                    onsubmit="return confirm('Remove OpenAI key?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="key_name" value="OPENAI_API_KEY">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="bi bi-x-circle me-1"></i>Remove OpenAI Key
-                </button>
-              </form>
-              {% endif %}
-              {% if integ.openrouter_key_set %}
-              <form method="POST" action="{{ url_for('routes.settings_remove_key') }}" class="d-inline"
-                    onsubmit="return confirm('Remove OpenRouter key?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="key_name" value="OPENROUTER_API_KEY">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="bi bi-x-circle me-1"></i>Remove OpenRouter Key
-                </button>
-              </form>
-              {% endif %}
-              {% if integ.gemini_key_set %}
-              <form method="POST" action="{{ url_for('routes.settings_remove_key') }}" class="d-inline"
-                    onsubmit="return confirm('Remove Gemini key?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="key_name" value="GEMINI_API_KEY">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="bi bi-x-circle me-1"></i>Remove Gemini Key
-                </button>
-              </form>
-              {% endif %}
-              {% if integ.nvd_key_set %}
-              <form method="POST" action="{{ url_for('routes.settings_remove_key') }}" class="d-inline"
-                    onsubmit="return confirm('Remove NVD API key?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="key_name" value="NVD_API_KEY">
-                <button type="submit" class="btn btn-outline-danger btn-sm">
-                  <i class="bi bi-x-circle me-1"></i>Remove NVD Key
-                </button>
-              </form>
-              {% endif %}
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Telegram Alerts ──────────────────────────────────── -->
+  <!-- Alert Channels Row -->
+  <div class="row g-4 mt-2">
+    <!-- Telegram Alerts -->
     <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header small fw-semibold text-muted d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-telegram me-1"></i>Telegram Alerts</span>
-          <span class="badge {% if integ.telegram_enabled %}bg-success{% else %}bg-secondary{% endif %}">
-            {{ 'Active' if integ.telegram_enabled else 'Not set' }}
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-telegram"></i> Telegram Push Channel</span>
+          <span class="{% if integ.telegram_enabled %}badge-config{% else %}badge-none{% endif %}">
+            {{ 'Active' if integ.telegram_enabled else 'Disabled' }}
           </span>
         </div>
-        <div class="card-body">
-          <p class="text-muted small mb-3">
-            Get instant push notifications when a threat is detected or an IP is blocked.
-            <a href="https://t.me/BotFather" target="_blank" class="text-cyan">Get a bot token from @BotFather</a>.
+        <div class="card-body-custom">
+          <p class="small text-muted mb-3">
+            Send real-time intrusion alarms via Telegram. <a href="https://t.me/BotFather" target="_blank" style="color:#6366f1; text-decoration:underline;">Create bot token via @BotFather</a>.
           </p>
           <form method="POST" action="{{ url_for('routes.settings_integrations') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="section" value="telegram">
 
             <div class="mb-3">
-              <label class="form-label small fw-semibold">Bot Token</label>
+              <label class="hs-label" for="tgToken">Bot Token</label>
               <div class="input-group input-group-sm">
                 <input type="password" name="TELEGRAM_BOT_TOKEN" id="tgToken"
-                       class="form-control bg-dark border-secondary text-white font-monospace"
+                       class="form-control bg-light border-2 text-dark font-monospace"
+                       style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
                        placeholder="{{ integ.telegram_token_masked if integ.telegram_token_set else '123456:ABC-...' }}">
-                <button type="button" class="btn btn-outline-secondary" onclick="togglePw('tgToken',this)">
+                <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('tgToken',this)">
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-              <div class="form-text text-muted">Leave blank to keep existing token.</div>
             </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">Chat ID</label>
-              <input type="text" name="TELEGRAM_CHAT_ID"
-                     class="form-control form-control-sm bg-dark border-secondary text-white font-monospace"
-                     value="{{ integ.telegram_chat_id }}"
-                     placeholder="-1001234567890">
-              <div class="form-text text-muted">
-                Send a message to your bot, then visit
-                <code>api.telegram.org/bot{TOKEN}/getUpdates</code> to find your chat ID.
-              </div>
+            <div class="mb-4">
+              <label class="hs-label" for="tgChatId">Target Chat ID</label>
+              <input type="text" name="TELEGRAM_CHAT_ID" id="tgChatId" class="hs-input" style="padding:8px;"
+                     value="{{ integ.telegram_chat_id }}" placeholder="-1001234567890">
             </div>
 
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-cyan btn-sm fw-semibold">
-                <i class="bi bi-save me-1"></i>Save
+              <button type="submit" class="btn btn-sm btn-primary fw-bold" style="border-radius:10px; background:#6366f1; border:none; padding:6px 14px;">
+                Save Telegram
               </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm"
+              <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:10px; font-weight:700;"
                       onclick="testAlert('telegram',this)" {% if not integ.telegram_enabled %}disabled{% endif %}>
-                <i class="bi bi-send me-1"></i>Send Test
+                <i class="bi bi-send me-1"></i> Send Test Message
               </button>
             </div>
           </form>
@@ -425,91 +467,83 @@
       </div>
     </div>
 
-    <!-- ── Email / Gmail Alerts ────────────────────────────── -->
+    <!-- Email Alerts -->
     <div class="col-lg-6">
-      <div class="card h-100">
-        <div class="card-header small fw-semibold text-muted d-flex align-items-center justify-content-between">
-          <span><i class="bi bi-envelope me-1"></i>Email Alerts (Gmail / SMTP)</span>
-          <span class="badge {% if integ.email_enabled %}bg-success{% else %}bg-secondary{% endif %}">
-            {{ 'Active' if integ.email_enabled else 'Not set' }}
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-envelope"></i> SMTP Email Channel</span>
+          <span class="{% if integ.email_enabled %}badge-config{% else %}badge-none{% endif %}">
+            {{ 'Active' if integ.email_enabled else 'Disabled' }}
           </span>
         </div>
-        <div class="card-body">
-          <p class="text-muted small mb-3">
-            Receive security alerts by email.
-            For Gmail, use an
-            <a href="https://support.google.com/accounts/answer/185833" target="_blank" class="text-cyan">App Password</a>
-            (not your regular password).
+        <div class="card-body-custom">
+          <p class="small text-muted mb-3">
+            Receive security notifications directly in your mailbox. Gmail requires an <a href="https://support.google.com/accounts/answer/185833" target="_blank" style="color:#6366f1; text-decoration:underline;">App Password</a>.
           </p>
           <form method="POST" action="{{ url_for('routes.settings_integrations') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="section" value="email">
 
-            <div class="row g-2 mb-2">
+            <div class="row g-2 mb-3">
               <div class="col-8">
-                <label class="form-label small fw-semibold">SMTP Host</label>
-                <input type="text" name="SMTP_HOST"
-                       class="form-control form-control-sm bg-dark border-secondary text-white"
+                <label class="hs-label" for="smtpHost">SMTP Server Host</label>
+                <input type="text" name="SMTP_HOST" id="smtpHost" class="hs-input" style="padding:8px;"
                        value="{{ integ.smtp_host }}" placeholder="smtp.gmail.com">
               </div>
               <div class="col-4">
-                <label class="form-label small fw-semibold">Port</label>
-                <input type="number" name="SMTP_PORT"
-                       class="form-control form-control-sm bg-dark border-secondary text-white"
+                <label class="hs-label" for="smtpPort">Port</label>
+                <input type="number" name="SMTP_PORT" id="smtpPort" class="hs-input" style="padding:8px;"
                        value="{{ integ.smtp_port }}" placeholder="587">
               </div>
             </div>
-            <div class="mb-2">
-              <label class="form-label small fw-semibold">Alert Email Address</label>
-              <input type="email" name="ALERT_EMAIL"
-                     class="form-control form-control-sm bg-dark border-secondary text-white"
+            <div class="mb-3">
+              <label class="hs-label" for="alertEmail">Alert Receiver Email</label>
+              <input type="email" name="ALERT_EMAIL" id="alertEmail" class="hs-input" style="padding:8px;"
                      value="{{ integ.alert_email }}" placeholder="you@gmail.com">
             </div>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">App Password</label>
+            <div class="mb-4">
+              <label class="hs-label" for="smtpPw">SMTP Password</label>
               <div class="input-group input-group-sm">
                 <input type="password" name="SMTP_PASSWORD" id="smtpPw"
-                       class="form-control bg-dark border-secondary text-white font-monospace"
-                       placeholder="{{ integ.smtp_password_masked if integ.smtp_password_set else 'Gmail App Password' }}">
-                <button type="button" class="btn btn-outline-secondary" onclick="togglePw('smtpPw',this)">
+                       class="form-control bg-light border-2 text-dark font-monospace"
+                       style="border-radius:8px 0 0 8px; border-color:#e2e8f0;"
+                       placeholder="{{ integ.smtp_password_masked if integ.smtp_password_set else 'App Password' }}">
+                <button type="button" class="btn btn-outline-secondary" style="border-color:#e2e8f0;" onclick="togglePw('smtpPw',this)">
                   <i class="bi bi-eye"></i>
                 </button>
               </div>
-              <div class="form-text text-muted">Leave blank to keep existing password.</div>
             </div>
 
             <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-cyan btn-sm fw-semibold">
-                <i class="bi bi-save me-1"></i>Save
+              <button type="submit" class="btn btn-sm btn-primary fw-bold" style="border-radius:10px; background:#6366f1; border:none; padding:6px 14px;">
+                Save SMTP Settings
               </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm"
+              <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:10px; font-weight:700;"
                       onclick="testAlert('email',this)" {% if not integ.email_enabled %}disabled{% endif %}>
-                <i class="bi bi-send me-1"></i>Send Test
+                <i class="bi bi-send me-1"></i> Send Test Email
               </button>
             </div>
           </form>
         </div>
       </div>
     </div>
+  </div>
 
-  </div><!-- /row integrations -->
-</div><!-- /integrations -->
+</div>
 
-<!-- Toast for test results -->
+<!-- Test Toast Container -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:9999;">
-  <div id="alertToast" class="toast align-items-center border-0" role="alert">
+  <div id="alertToast" class="toast align-items-center border-0 text-white" role="alert" style="border-radius:12px; background:#1e293b;">
     <div class="d-flex">
       <div class="toast-body fw-semibold" id="alertToastBody">—</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Show/hide password toggle
 function togglePw(id, btn) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -518,18 +552,16 @@ function togglePw(id, btn) {
   btn.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
 }
 
-// LLM provider panel switcher
 function showLlmPanel(val) {
   document.querySelectorAll('.llm-panel').forEach(p => p.style.display = 'none');
   const panel = document.getElementById('panel-' + val);
   if (panel) panel.style.display = '';
 }
-// Show current provider panel on load + auto-test saved keys
+
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('llmProvider');
   if (sel) showLlmPanel(sel.value);
 
-  // Auto-test any saved LLM keys (silently, no toast on success unless clicked manually)
   const savedProviders = [];
   {% if integ.openai_key_set %}  savedProviders.push('openai');  {% endif %}
   {% if integ.openrouter_key_set %}  savedProviders.push('openrouter');  {% endif %}
@@ -538,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
   savedProviders.forEach(async (p) => {
     const resultEl = document.getElementById(p + '-test-result');
     if (!resultEl) return;
-    resultEl.className = 'small align-self-center text-muted';
+    resultEl.className = 'small align-self-center text-muted ms-2';
     resultEl.textContent = 'Checking…';
     try {
       const resp = await fetch('/api/integrations/test-llm', {
@@ -548,16 +580,15 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ csrf_token: '{{ csrf_token }}', provider: p }),
       });
       const data = await resp.json();
-      resultEl.className = 'small align-self-center fw-semibold ' + (data.ok ? 'text-success' : 'text-danger');
+      resultEl.className = 'small align-self-center fw-semibold ms-2 ' + (data.ok ? 'text-success' : 'text-danger');
       resultEl.textContent = (data.ok ? '✓ Active' : '✗ ' + (data.message || 'Error'));
     } catch (e) {
-      resultEl.className = 'small align-self-center text-muted';
+      resultEl.className = 'small align-self-center text-muted ms-2';
       resultEl.textContent = 'Check failed';
     }
   });
 });
 
-// Test LLM API key
 async function testLlmKey(provider, btn) {
   const orig = btn.innerHTML;
   const resultEl = document.getElementById(provider + '-test-result');
@@ -573,12 +604,12 @@ async function testLlmKey(provider, btn) {
     });
     const data = await resp.json();
     if (resultEl) {
-      resultEl.className = 'small align-self-center fw-semibold ' + (data.ok ? 'text-success' : 'text-danger');
+      resultEl.className = 'small align-self-center fw-semibold ms-2 ' + (data.ok ? 'text-success' : 'text-danger');
       resultEl.textContent = (data.ok ? '✓ ' : '✗ ') + (data.message || data.error || '');
     }
     showToast(data.ok, data.message || data.error || 'Unknown result');
   } catch (e) {
-    if (resultEl) { resultEl.className = 'small align-self-center text-danger'; resultEl.textContent = '✗ ' + e.message; }
+    if (resultEl) { resultEl.className = 'small align-self-center text-danger ms-2'; resultEl.textContent = '✗ ' + e.message; }
     showToast(false, 'Request failed: ' + e.message);
   } finally {
     btn.disabled = false;
@@ -586,7 +617,6 @@ async function testLlmKey(provider, btn) {
   }
 }
 
-// Test alert (Telegram / Email)
 async function testAlert(channel, btn) {
   const orig = btn.innerHTML;
   btn.disabled = true;

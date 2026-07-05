@@ -1,162 +1,228 @@
 {% extends "base.html" %}
-{% block title %}Reports — HybridSec{% endblock %}
+{% block title %}📄 Reports — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .reports-page { padding: 28px 32px; }
+
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
+
+  /* Table */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  .hs-table th { padding: 10px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .hs-table td { padding: 12px 16px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .hs-table tbody tr:hover { background-color: #f8fafc; }
+
+  .badge-pdf  { background: #fee2e2; color: #ef4444; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-html { background: #e0f2fe; color: #0369a1; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+
+  .badge-type-quick { background: #ede9fe; color: #6366f1; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-type-deep  { background: #e0f2fe; color: #0369a1; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+
+  .empty-state { text-align: center; padding: 48px 20px; }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0f4ff,#ede9fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #6366f1;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Security Reports</h4>
-    <p class="text-muted small mb-0">Generate PDF and HTML security reports from completed scans.</p>
-  </div>
-</div>
+<div class="reports-page">
 
-<div class="row g-3">
-
-  <!-- ── Generate from scan ─────────────────────────────── -->
-  <div class="col-lg-8">
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-file-earmark-text me-1"></i>Available Scans
-      </div>
-      <div class="card-body p-0">
-        {% if scans %}
-          <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 small">
-              <thead>
-                <tr class="text-muted">
-                  <th>Scan ID</th><th>Type</th><th>Target</th>
-                  <th>Completed</th><th>PDF</th><th>HTML</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for s in scans %}
-                <tr>
-                  <td class="font-monospace" style="font-size:0.73rem;">{{ s.scan_id[:18] }}…</td>
-                  <td>
-                    <span class="badge {% if s.scan_type == 'deep' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
-                      {{ s.scan_type or '—' }}
-                    </span>
-                  </td>
-                  <td>{{ s.target or '—' }}</td>
-                  <td>{{ (s.completed_at or '')[:16].replace('T',' ') }}</td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-danger btn-gen-report"
-                            data-scan-id="{{ s.scan_id }}" data-format="pdf">
-                      <i class="bi bi-file-pdf me-1"></i>PDF
-                    </button>
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-info btn-gen-report"
-                            data-scan-id="{{ s.scan_id }}" data-format="html">
-                      <i class="bi bi-file-code me-1"></i>HTML
-                    </button>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <div class="text-center text-muted py-5">
-            <i class="bi bi-file-earmark-x fs-2 d-block mb-2"></i>
-            No completed scans found. <a href="{{ url_for('routes.scan') }}">Run a scan first.</a>
-          </div>
-        {% endif %}
-      </div>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">📄 Security Reports</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">Generate PDF and HTML security reports from completed scans.</p>
     </div>
   </div>
 
-  <!-- ── Info panel ──────────────────────────────────────── -->
-  <div class="col-lg-4">
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-info-circle me-1"></i>Report Contents
-      </div>
-      <div class="card-body small text-muted">
-        <p>Generated reports include:</p>
-        <ul>
-          <li>Executive summary with risk score breakdown</li>
-          <li>Full vulnerability list with CVSS + Hybrid scores</li>
-          <li>SME context profile used during scoring</li>
-          <li>Prioritised remediation recommendations</li>
-          <li>Live Guard incident log</li>
-          <li>Lynis hardening score</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Generated reports list ─────────────────────────── -->
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-archive me-1"></i>Generated Reports</span>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-          </button>
-          {% if generated %}
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteAllReports(this)">
-            <i class="bi bi-trash3 me-1"></i>Delete All
-          </button>
+  <div class="row g-4">
+    <!-- Available Scans table -->
+    <div class="col-lg-8">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-file-earmark-text"></i> Available Scans</span>
+        </div>
+        <div class="card-body-custom p-0">
+          {% if scans %}
+            <div class="table-responsive">
+              <table class="hs-table">
+                <thead>
+                  <tr>
+                    <th>Scan ID</th>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Completed</th>
+                    <th style="width: 100px;">PDF</th>
+                    <th style="width: 100px;">HTML</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in scans %}
+                  <tr>
+                    <td class="font-monospace" style="font-size:0.75rem; color:#64748b;">{{ s.scan_id[:18] }}…</td>
+                    <td>
+                      <span class="{% if s.scan_type == 'deep' %}badge-type-deep{% else %}badge-type-quick{% endif %}">
+                        {{ s.scan_type | upper }}
+                      </span>
+                    </td>
+                    <td style="font-weight:700; color:#1e293b;">{{ s.target or '—' }}</td>
+                    <td style="color:#64748b;">{{ (s.completed_at or '')[:16].replace('T',' ') }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-danger btn-gen-report" style="border-radius:8px; font-weight:700;"
+                              data-scan-id="{{ s.scan_id }}" data-format="pdf">
+                        <i class="bi bi-file-pdf me-1"></i>PDF
+                      </button>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary btn-gen-report" style="border-radius:8px; font-weight:700;"
+                              data-scan-id="{{ s.scan_id }}" data-format="html">
+                        <i class="bi bi-file-code me-1"></i>HTML
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-icon"><i class="bi bi-file-earmark-x"></i></div>
+              <h6>No Completed Scans</h6>
+              <p class="text-muted small">You need to run and complete a scan to generate reports.</p>
+              <a href="{{ url_for('routes.scan') }}" class="btn btn-primary btn-sm" style="border-radius:10px; font-weight:700; padding:8px 16px; margin-top:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none;">
+                Run Scan
+              </a>
+            </div>
           {% endif %}
         </div>
       </div>
-      <div class="card-body p-0" id="generatedReportsWrapper">
-        {% if generated %}
-          <div class="table-responsive">
-            <table class="table table-dark table-hover mb-0 small" id="generatedTable">
-              <thead>
-                <tr class="text-muted">
-                  <th>Filename</th><th>Format</th><th>Size</th>
-                  <th>Created</th><th>Download</th><th></th>
-                </tr>
-              </thead>
-              <tbody id="reportsTableBody">
-                {% for r in generated %}
-                <tr id="report-row-{{ r.filename | replace('.','_') }}">
-                  <td class="font-monospace" style="font-size:0.73rem;">{{ r.filename }}</td>
-                  <td>
-                    <span class="badge {% if r.format == 'pdf' %}bg-danger{% else %}bg-info text-dark{% endif %}">
-                      {{ r.format | upper }}
-                    </span>
-                  </td>
-                  <td>{{ r.size_kb }} KB</td>
-                  <td>{{ r.created_at[:16].replace('T',' ') }}</td>
-                  <td>
-                    <a href="{{ url_for('routes.report_download', filename=r.filename) }}"
-                       class="btn btn-sm {% if r.format == 'pdf' %}btn-outline-danger{% else %}btn-outline-info{% endif %}">
-                      <i class="bi bi-download me-1"></i>Download
-                    </a>
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-danger"
-                            onclick="deleteReport('{{ r.filename }}', this)"
-                            title="Delete this report">
-                      <i class="bi bi-trash3"></i>
-                    </button>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+    </div>
+
+    <!-- Contents overview card -->
+    <div class="col-lg-4">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-info-circle"></i> Report Scope</span>
+        </div>
+        <div class="card-body-custom" style="font-size:0.85rem; color:#475569; line-height:1.6;">
+          <p>Generated reports include:</p>
+          <ul class="ps-3 mb-0" style="display:flex; flex-direction:column; gap:8px;">
+            <li><i class="bi bi-check2-circle text-success me-1"></i> Executive summary with risks</li>
+            <li><i class="bi bi-check2-circle text-success me-1"></i> Full vulnerability catalog</li>
+            <li><i class="bi bi-check2-circle text-success me-1"></i> SME profile risk adjustments</li>
+            <li><i class="bi bi-check2-circle text-success me-1"></i> Automated fixing recommendations</li>
+            <li><i class="bi bi-check2-circle text-success me-1"></i> Live Guard logs & alerts</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generated list -->
+    <div class="col-12">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-archive"></i> Generated Reports</span>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600;" onclick="location.reload()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            {% if generated %}
+            <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:700;" onclick="deleteAllReports(this)">
+              <i class="bi bi-trash3 me-1"></i>Delete All
+            </button>
+            {% endif %}
           </div>
-        {% else %}
-          <div class="text-center text-muted py-4" id="noReportsMsg">
-            <i class="bi bi-folder2-open fs-2 d-block mb-2"></i>
-            No reports generated yet. Use the buttons above to create one.
-          </div>
-        {% endif %}
+        </div>
+
+        <div class="card-body-custom p-0" id="generatedReportsWrapper">
+          {% if generated %}
+            <div class="table-responsive">
+              <table class="hs-table" id="generatedTable">
+                <thead>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Format</th>
+                    <th>Size</th>
+                    <th>Created</th>
+                    <th style="width: 130px;">Download</th>
+                    <th style="width: 50px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                  {% for r in generated %}
+                  <tr id="report-row-{{ r.filename | replace('.','_') }}">
+                    <td class="font-monospace" style="font-size:0.75rem; color:#475569;">{{ r.filename }}</td>
+                    <td>
+                      <span class="{% if r.format == 'pdf' %}badge-pdf{% else %}badge-html{% endif %}">
+                        {{ r.format | upper }}
+                      </span>
+                    </td>
+                    <td style="color:#64748b;">{{ r.size_kb }} KB</td>
+                    <td style="color:#64748b;">{{ r.created_at[:16].replace('T',' ') }}</td>
+                    <td>
+                      <a href="{{ url_for('routes.report_download', filename=r.filename) }}"
+                         class="btn btn-sm {% if r.format == 'pdf' %}btn-outline-danger{% else %}btn-outline-primary{% endif %}"
+                         style="border-radius:8px; font-weight:700; padding:4px 12px; width:100%; text-align:center;">
+                        <i class="bi bi-download me-1"></i>Download
+                      </a>
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-danger" style="border-radius:8px;"
+                              onclick="deleteReport('{{ r.filename }}', this)"
+                              title="Delete report">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="empty-state" id="noReportsMsg">
+              <div class="empty-icon"><i class="bi bi-archive-fill"></i></div>
+              <h6>No Generated Reports</h6>
+              <p class="text-muted small">Use the buttons in the list above to render a report.</p>
+            </div>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- Report Status Toast -->
+<!-- Status Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
-  <div id="reportToast" class="toast align-items-center text-white border-0" role="alert">
+  <div id="reportToast" class="toast align-items-center text-white border-0" role="alert" style="border-radius:12px; background:#1e293b;">
     <div class="d-flex">
-      <div class="toast-body" id="reportToastBody">Generating report…</div>
+      <div class="toast-body" id="reportToastBody" style="font-weight:600; font-size:0.85rem;">Generating report…</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
@@ -226,14 +292,12 @@ document.querySelectorAll('.btn-gen-report').forEach(btn => {
       const toastBody = document.getElementById('reportToastBody');
 
       if (data.success && data.file) {
-        // Extract filename from full path
         const filename = data.file.split('/').pop();
         const dlUrl = '/reports/download/' + encodeURIComponent(filename);
         toastBody.innerHTML =
           'Report ready: <a href="' + dlUrl + '" class="text-white fw-semibold">' + filename + '</a>';
         toastEl.classList.remove('bg-warning');
         toastEl.classList.add('bg-success');
-        // Reload page after a short delay so the generated list refreshes
         setTimeout(() => location.reload(), 3000);
       } else {
         toastBody.textContent = data.message || data.error || 'Generation failed';

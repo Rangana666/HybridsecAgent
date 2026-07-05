@@ -1,144 +1,264 @@
 {% extends "base.html" %}
-{% block title %}Security Scan — HybridSec{% endblock %}
+{% block title %}🔍 Security Scan — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .scan-page { padding: 28px 32px; }
+  
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size:1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
+
+  /* Interactive scan selector cards */
+  .scan-selector-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media(max-width:576px) { .scan-selector-row { grid-template-columns: 1fr; } }
+  
+  .scan-type-card {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .scan-type-card:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+  }
+  .scan-type-card.active {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(99,102,241,0.1);
+  }
+  .scan-type-card.active::after {
+    content: '✓';
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 22px; height: 22px;
+    background: #6366f1;
+    color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+  }
+
+  .scan-card-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 14px;
+  }
+  .scan-card-icon.quick { background: linear-gradient(135deg, #ede9fe, #dbeafe); color: #6366f1; }
+  .scan-card-icon.deep { background: linear-gradient(135deg, #e0f2fe, #dbeafe); color: #0284c7; }
+
+  .scan-card-title { font-weight: 700; color: #1e293b; font-size: 0.95rem; margin-bottom: 4px; }
+  .scan-card-sub { font-size: 0.78rem; color: #64748b; margin-bottom: 12px; }
+  .scan-card-meta { font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .btn-start-scan {
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff; border: none; width: 100%;
+    padding: 13px; border-radius: 12px;
+    font-weight: 700; font-size: 0.92rem;
+    font-family: 'Inter', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-start-scan:hover { transform: translateY(-1px); opacity: 0.92; color: #fff; }
+  .btn-start-scan:active { transform: translateY(0); }
+
+  /* History Table */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  .hs-table th { padding: 12px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .hs-table td { padding: 14px 16px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .hs-table tbody tr:hover { background-color: #f8fafc; }
+
+  .badge-type-quick { background: #ede9fe; color: #6366f1; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-type-deep  { background: #e0f2fe; color: #0369a1; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+
+  .badge-status-completed { background: #dcfce7; color: #16a34a; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-status-running   { background: #fef9c3; color: #ca8a04; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+  .badge-status-failed    { background: #fee2e2; color: #ef4444; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
+
+  .empty-state { text-align: center; padding: 48px 20px; }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0f4ff,#ede9fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #6366f1;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Security Scan</h4>
-    <p class="text-muted small mb-0">Run a quick or deep vulnerability scan of this server.</p>
-  </div>
-</div>
+<div class="scan-page">
 
-<!-- Scan Control Card -->
-<div class="row g-3 mb-4">
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-search me-1"></i>Launch New Scan
-      </div>
-      <div class="card-body">
-        <div class="mb-4">
-          <label class="form-label small">Scan Type</label>
-          <div class="d-flex gap-3">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="scanType" id="typeQuick" value="quick" checked>
-              <label class="form-check-label small" for="typeQuick">
-                <strong>Quick Scan</strong>
-                <span class="text-muted d-block" style="font-size:0.75rem;">
-                  SSH, firewall, users, system checks (~30s)
-                </span>
-              </label>
+  <!-- Title bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">🔍 Security Scan</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">Run a quick or deep vulnerability scan of this server.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <!-- Left panel: configuration -->
+    <div class="col-lg-6">
+      <div class="hs-card h-100">
+        <div class="card-header-custom">
+          <span><i class="bi bi-search"></i> Launch New Scan</span>
+        </div>
+        <div class="card-body-custom">
+          
+          <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; display: block;">
+            Scan Type
+          </label>
+          
+          <div class="scan-selector-row">
+            <!-- Quick Scan card -->
+            <div class="scan-type-card active" id="cardQuick" onclick="selectScanType('quick')">
+              <div class="scan-card-icon quick">
+                <i class="bi bi-lightning-charge-fill"></i>
+              </div>
+              <div class="scan-card-title">Quick Scan</div>
+              <div class="scan-card-sub">SSH, firewall, users, basic system checks.</div>
+              <div class="scan-card-meta">⚡ ~30 seconds</div>
             </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="scanType" id="typeDeep" value="deep">
-              <label class="form-check-label small" for="typeDeep">
-                <strong>Deep Scan</strong>
-                <span class="text-muted d-block" style="font-size:0.75rem;">
-                  + Nmap, Lynis, NVD enrichment (~3–5 min)
-                </span>
-              </label>
+
+            <!-- Deep Scan card -->
+            <div class="scan-type-card" id="cardDeep" onclick="selectScanType('deep')">
+              <div class="scan-card-icon deep">
+                <i class="bi bi-activity"></i>
+              </div>
+              <div class="scan-card-title">Deep Scan</div>
+              <div class="scan-card-sub">Quick checks + Nmap, Lynis, and NVD enrichment.</div>
+              <div class="scan-card-meta">🔬 ~3–5 mins</div>
             </div>
           </div>
+
+          <!-- Hidden inputs for form logic -->
+          <input type="radio" name="scanType" id="typeQuick" value="quick" checked style="display:none;">
+          <input type="radio" name="scanType" id="typeDeep" value="deep" style="display:none;">
+
+          <button id="btnStartScan" class="btn-start-scan">
+            <i class="bi bi-play-fill"></i> Start Scan
+          </button>
+
         </div>
-        <button id="btnStartScan" class="btn btn-cyan w-100 fw-semibold">
-          <i class="bi bi-play-fill me-2"></i>Start Scan
-        </button>
+      </div>
+    </div>
+
+    <!-- Right panel: progress (hidden until scan starts) -->
+    <div class="col-lg-6">
+      <div class="hs-card h-100" id="scanProgressCard" style="display:none!important;">
+        <div class="card-header-custom">
+          <span><i class="bi bi-activity"></i> Scan Progress</span>
+        </div>
+        <div class="card-body-custom d-flex flex-column align-items-center justify-content-center gap-3" style="min-height: 250px;">
+          <div class="spinner-border" role="status" style="width:3rem;height:3rem;color:#6366f1;"></div>
+          <div id="scanStatusText" class="fw-bold" style="color:#1e293b;">Initialising scan...</div>
+          <div id="scanIdDisplay" class="font-monospace text-muted small" style="background:#f1f5f9; padding:4px 10px; border-radius:6px;"></div>
+          <div class="progress w-100 mt-2" style="height:8px; border-radius:20px; background:#f1f5f9; overflow:hidden;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated w-100" style="background:linear-gradient(90deg,#6366f1,#3b82f6); border-radius:20px;"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Progress card (hidden until scan starts) -->
-  <div class="col-lg-6">
-    <div class="card h-100" id="scanProgressCard" style="display:none!important;">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-activity me-1"></i>Scan Progress
-      </div>
-      <div class="card-body d-flex flex-column align-items-center justify-content-center gap-3">
-        <div class="spinner-border text-cyan" role="status" style="width:3rem;height:3rem;"></div>
-        <div id="scanStatusText" class="fw-semibold">Initialising scan...</div>
-        <div id="scanIdDisplay" class="text-muted small"></div>
-        <div class="progress w-100" style="height:6px;">
-          <div class="progress-bar progress-bar-striped progress-bar-animated bg-cyan w-100"></div>
+  <!-- Scan History table -->
+  <div class="hs-card">
+    <div class="card-header-custom">
+      <span><i class="bi bi-clock-history"></i> Recent Scans</span>
+      {% if history %}
+      <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:600;" onclick="deleteAllScans(this)">
+        <i class="bi bi-trash3 me-1"></i>Delete All
+      </button>
+      {% endif %}
+    </div>
+    <div class="card-body-custom p-0">
+      {% if history %}
+        <div class="table-responsive">
+          <table class="hs-table" id="scanHistoryTable">
+            <thead>
+              <tr>
+                <th>Scan ID</th>
+                <th>Type</th>
+                <th>Target</th>
+                <th>Started</th>
+                <th>Completed</th>
+                <th>Status</th>
+                <th style="width: 120px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in history %}
+              <tr id="scan-row-{{ s.scan_id }}">
+                <td class="font-monospace" style="font-size:0.75rem; color:#475569;">{{ s.scan_id[:20] }}…</td>
+                <td>
+                  <span class="{% if s.scan_type == 'deep' %}badge-type-deep{% else %}badge-type-quick{% endif %}">
+                    {{ s.scan_type | upper }}
+                  </span>
+                </td>
+                <td style="font-weight:600; color:#334155;">{{ s.target or '—' }}</td>
+                <td style="color:#64748b; font-size:0.8rem;">{{ (s.started_at or '')[:16].replace('T',' ') }}</td>
+                <td style="color:#64748b; font-size:0.8rem;">{{ (s.completed_at or '—')[:16].replace('T',' ') }}</td>
+                <td>
+                  <span class="{% if s.status == 'completed' %}badge-status-completed{% elif s.status == 'running' %}badge-status-running{% elif s.status == 'failed' %}badge-status-failed{% else %}badge-status-failed{% endif %}">
+                    {{ s.status | upper }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    {% if s.status == 'completed' %}
+                      <a href="{{ url_for('routes.risks', scan_id=s.scan_id) }}"
+                         class="btn btn-sm btn-outline-primary" style="border-radius:8px; font-weight:600; padding:4px 10px;">View</a>
+                    {% endif %}
+                    {% if s.status != 'running' %}
+                      <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; padding:4px 8px;"
+                              onclick="deleteScan('{{ s.scan_id }}', this)"
+                              title="Delete this scan">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-      </div>
+      {% else %}
+        <div class="empty-state" id="noScansMsg">
+          <div class="empty-icon"><i class="bi bi-search"></i></div>
+          <h6>No Scans Yet</h6>
+          <p class="text-muted small">Configure and launch a vulnerability scan above.</p>
+        </div>
+      {% endif %}
     </div>
   </div>
-</div>
 
-<!-- Scan History -->
-<div class="card">
-  <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-clock-history me-1"></i>Recent Scans</span>
-    {% if history %}
-    <button class="btn btn-sm btn-outline-danger"
-            onclick="deleteAllScans(this)">
-      <i class="bi bi-trash3 me-1"></i>Delete All
-    </button>
-    {% endif %}
-  </div>
-  <div class="card-body p-0">
-    {% if history %}
-      <div class="table-responsive">
-        <table class="table table-dark table-hover mb-0 small" id="scanHistoryTable">
-          <thead>
-            <tr class="text-muted">
-              <th>Scan ID</th>
-              <th>Type</th>
-              <th>Target</th>
-              <th>Started</th>
-              <th>Completed</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in history %}
-            <tr id="scan-row-{{ s.scan_id }}">
-              <td class="font-monospace" style="font-size:0.75rem;">{{ s.scan_id[:20] }}…</td>
-              <td>
-                <span class="badge
-                  {% if s.scan_type == 'deep' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
-                  {{ s.scan_type or '—' }}
-                </span>
-              </td>
-              <td>{{ s.target or '—' }}</td>
-              <td>{{ (s.started_at or '')[:16].replace('T',' ') }}</td>
-              <td>{{ (s.completed_at or '—')[:16].replace('T',' ') }}</td>
-              <td>
-                <span class="badge
-                  {% if s.status == 'completed' %}bg-success
-                  {% elif s.status == 'running' %}bg-warning text-dark
-                  {% elif s.status == 'failed' %}bg-danger
-                  {% else %}bg-secondary{% endif %}">
-                  {{ s.status }}
-                </span>
-              </td>
-              <td class="text-end">
-                <div class="d-flex gap-1 justify-content-end">
-                  {% if s.status == 'completed' %}
-                    <a href="{{ url_for('routes.risks', scan_id=s.scan_id) }}"
-                       class="btn btn-sm btn-outline-secondary">View</a>
-                  {% endif %}
-                  {% if s.status != 'running' %}
-                    <button class="btn btn-sm btn-outline-danger"
-                            onclick="deleteScan('{{ s.scan_id }}', this)"
-                            title="Delete this scan">
-                      <i class="bi bi-trash3"></i>
-                    </button>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center text-muted py-5" id="noScansMsg">
-        <i class="bi bi-search fs-2 d-block mb-2"></i>No scans yet. Run your first scan above.
-      </div>
-    {% endif %}
-  </div>
 </div>
 {% endblock %}
 
@@ -149,6 +269,19 @@
   {% if running_scan_id %}
   window.addEventListener('DOMContentLoaded', () => startPolling("{{ running_scan_id }}"));
   {% endif %}
+
+  function selectScanType(type) {
+    document.getElementById('cardQuick').classList.remove('active');
+    document.getElementById('cardDeep').classList.remove('active');
+    
+    if (type === 'quick') {
+      document.getElementById('cardQuick').classList.add('active');
+      document.getElementById('typeQuick').checked = true;
+    } else {
+      document.getElementById('cardDeep').classList.add('active');
+      document.getElementById('typeDeep').checked = true;
+    }
+  }
 
   async function deleteScan(scanId, btn) {
     if (!confirm('Delete this scan record?')) return;

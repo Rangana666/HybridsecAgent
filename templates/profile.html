@@ -1,233 +1,314 @@
 {% extends "base.html" %}
-{% block title %}SME Profile — HybridSec{% endblock %}
+{% block title %}🏢 SME Profile — HybridSec{% endblock %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">SME Context Profile</h4>
-    <p class="text-muted small mb-0">
-      Your business context tailors vulnerability scores to your specific risk environment.
-    </p>
-  </div>
-</div>
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .profile-page { padding: 28px 32px; }
 
-<div class="row g-3">
-  <div class="col-lg-7">
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-building me-1"></i>Business Context
-      </div>
-      <div class="card-body">
-        {% if profile %}
-          <div class="alert alert-success alert-sm py-2 small mb-3">
-            <i class="bi bi-check-circle me-1"></i>
-            Profile active — scores are personalised for your business.
-          </div>
-        {% else %}
-          <div class="alert alert-warning py-2 small mb-3">
-            <i class="bi bi-exclamation-triangle me-1"></i>
-            No profile set. Generic scores will be used until you save a profile.
-          </div>
-        {% endif %}
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
 
-        <form method="POST" action="{{ url_for('routes.profile') }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  /* Forms */
+  .hs-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+  .hs-select, .hs-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .hs-select:focus, .hs-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  }
 
-          <!-- Business Name -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Business Name</label>
-            <input type="text" name="business_name"
-                   class="form-control bg-dark border-secondary text-white"
-                   value="{{ profile.business_name if profile else '' }}"
-                   placeholder="e.g. My Shop Ltd" maxlength="120" required>
-          </div>
+  .btn-save {
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff; border: none; font-weight: 700; font-size: 0.85rem;
+    padding: 10px 20px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.25);
+  }
+  .btn-save:hover { opacity: 0.92; color: #fff; }
 
-          <!-- Business Type -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">{{ labels.business_type }}</label>
-            <select name="business_type" class="form-select bg-dark border-secondary text-white" required>
-              <option value="">Select…</option>
-              {% for opt in valid_options.business_type %}
-                <option value="{{ opt }}"
-                  {% if profile and profile.business_type == opt %}selected{% endif %}>
-                  {{ opt }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+  /* Info table */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table td { padding: 8px 12px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
+  .hs-table td.text-muted { color: #64748b !important; }
 
-          <!-- Employee Count -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">{{ labels.employee_count }}</label>
-            <select name="employee_count" class="form-select bg-dark border-secondary text-white" required>
-              <option value="">Select…</option>
-              {% for opt in valid_options.employee_count %}
-                <option value="{{ opt }}"
-                  {% if profile and profile.employee_count == opt %}selected{% endif %}>
-                  {{ opt }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+  /* Software installer */
+  .pkg-card {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    height: 100%;
+    transition: all 0.2s;
+  }
+  .pkg-card:hover { border-color: #cbd5e1; transform: translateY(-1px); }
 
-          <!-- Server Purpose -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">{{ labels.server_purpose }}</label>
-            <select name="server_purpose" class="form-select bg-dark border-secondary text-white" required>
-              <option value="">Select…</option>
-              {% for opt in valid_options.server_purpose %}
-                <option value="{{ opt }}"
-                  {% if profile and profile.server_purpose == opt %}selected{% endif %}>
-                  {{ opt }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
+  .badge-pkg-installed { background: #dcfce7; color: #16a34a; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-pkg-absent    { background: #f1f5f9; color: #94a3b8; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-pkg-pending   { background: #fff7ed; color: #f97316; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
 
-          <!-- Sensitive Data -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">{{ labels.sensitive_data }}</label>
-            <div class="d-flex gap-4">
-              {% for opt in valid_options.sensitive_data %}
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="sensitive_data"
-                         id="sd_{{ opt }}" value="{{ opt }}"
-                         {% if profile and profile.sensitive_data == opt %}checked{% endif %} required>
-                  <label class="form-check-label small" for="sd_{{ opt }}">{{ opt }}</label>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-
-          <!-- IT Staff -->
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">{{ labels.has_it_staff }}</label>
-            <div class="d-flex gap-4">
-              {% for opt in valid_options.has_it_staff %}
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="has_it_staff"
-                         id="it_{{ opt }}" value="{{ opt }}"
-                         {% if profile and profile.has_it_staff == opt %}checked{% endif %} required>
-                  <label class="form-check-label small" for="it_{{ opt }}">{{ opt }}</label>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-
-          <!-- Security Budget -->
-          <div class="mb-4">
-            <label class="form-label small fw-semibold">{{ labels.security_budget }}</label>
-            <select name="security_budget" class="form-select bg-dark border-secondary text-white" required>
-              <option value="">Select…</option>
-              {% for opt in valid_options.security_budget %}
-                <option value="{{ opt }}"
-                  {% if profile and profile.security_budget == opt %}selected{% endif %}>
-                  {{ opt }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <button type="submit" class="btn btn-cyan fw-semibold">
-            <i class="bi bi-save me-2"></i>Save Profile
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Info panel -->
-  <div class="col-lg-5">
-    <div class="card mb-3">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-info-circle me-1"></i>How Context Scoring Works
-      </div>
-      <div class="card-body small text-muted">
-        <p>HybridSec uses your business profile to amplify vulnerability scores:</p>
-        <ul class="mb-0">
-          <li><strong class="text-white">E-commerce / Healthcare / Finance:</strong> 1.8× risk multiplier</li>
-          <li><strong class="text-white">Database / App Server:</strong> +0.3–0.4 score addition</li>
-          <li><strong class="text-white">Sensitive customer data:</strong> +0.4 addition</li>
-          <li><strong class="text-white">No IT staff:</strong> increases urgency of automated fixes</li>
-        </ul>
-        <hr class="border-secondary">
-        <p class="mb-0">
-          These weights are fed into the <strong class="text-white">Triple Hybrid Scoring</strong> engine
-          (Rule-Based 30% + ML 35% + LLM 35%) to produce a final 0–10 risk score per vulnerability.
-        </p>
-      </div>
-    </div>
-
-    {% if profile %}
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-sliders me-1"></i>Active Profile
-      </div>
-      <div class="card-body">
-        <table class="table table-sm table-dark mb-0 small">
-          <tr><td class="text-muted">Business</td><td class="fw-semibold">{{ profile.business_type }}</td></tr>
-          <tr><td class="text-muted">Employees</td><td>{{ profile.employee_count }}</td></tr>
-          <tr><td class="text-muted">Server</td><td>{{ profile.server_purpose }}</td></tr>
-          <tr><td class="text-muted">Sensitive Data</td><td>{{ profile.sensitive_data }}</td></tr>
-          <tr><td class="text-muted">IT Staff</td><td>{{ profile.has_it_staff }}</td></tr>
-          <tr><td class="text-muted">Budget</td><td>{{ profile.budget }}</td></tr>
-          {% if profile.weights %}
-            <tr>
-              <td class="text-muted">Context Modifier</td>
-              <td class="text-cyan fw-semibold">
-                ×{{ "%.2f" | format(profile.weights.get('context_modifier', 1.0)) }}
-              </td>
-            </tr>
-          {% endif %}
-        </table>
-      </div>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-<!-- ── Software Installer ────────────────────────────────────────── -->
-<div id="softwareInstaller" class="mt-4" style="display:none;">
-  <div class="card">
-    <div class="card-header d-flex align-items-center justify-content-between">
-      <span class="small fw-semibold text-muted">
-        <i class="bi bi-box-seam me-1"></i>Recommended Software for
-        <span id="installerPurposeLabel" class="text-white ms-1"></span>
-      </span>
-      <button class="btn btn-outline-secondary btn-sm" onclick="refreshPackageStatuses()">
-        <i class="bi bi-arrow-clockwise me-1"></i>Refresh Status
-      </button>
-    </div>
-    <div class="card-body">
-      <p class="small text-muted mb-3">
-        One-click install packages recommended for your server role. Installs run as
-        <code>apt-get install -y</code> — ensure your server has internet access.
-      </p>
-      <div id="packageGrid" class="row g-3"></div>
-    </div>
-  </div>
-</div>
+  .btn-pkg { border-radius: 8px; font-weight: 700; font-size: 0.78rem; padding: 5px 12px; }
+</style>
 {% endblock %}
 
-{% block scripts %}
+{% block content %}
+<div class="profile-page">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">🏢 SME Context Profile</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">Your business context tailors vulnerability scores to your specific risk environment.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left form -->
+    <div class="col-lg-7">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-building"></i> Business Context</span>
+        </div>
+        <div class="card-body-custom">
+          
+          {% if profile %}
+            <div class="alert alert-success py-2 px-3 small mb-4" style="border-radius:10px; background:#dcfce7; color:#16a34a; border:none; display:flex; align-items:center; gap:6px;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span><strong>Profile active:</strong> Vulnerability scores are personalized for your business.</span>
+            </div>
+          {% else %}
+            <div class="alert alert-warning py-2 px-3 small mb-4" style="border-radius:10px; background:#fff7ed; color:#c2410c; border:none; display:flex; align-items:center; gap:6px;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span><strong>No profile set:</strong> Generic risk weights will be used until a profile is saved.</span>
+            </div>
+          {% endif %}
+
+          <form method="POST" action="{{ url_for('routes.profile') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <!-- Business Name -->
+            <div class="mb-3">
+              <label class="hs-label" for="business_name">Business Name</label>
+              <input type="text" name="business_name" id="business_name"
+                     class="hs-input"
+                     value="{{ profile.business_name if profile else '' }}"
+                     placeholder="e.g. My Shop Ltd" maxlength="120" required>
+            </div>
+
+            <!-- Business Type -->
+            <div class="mb-3">
+              <label class="hs-label" for="business_type">{{ labels.business_type }}</label>
+              <select name="business_type" id="business_type" class="hs-select" required>
+                <option value="">Select…</option>
+                {% for opt in valid_options.business_type %}
+                  <option value="{{ opt }}"
+                    {% if profile and profile.business_type == opt %}selected{% endif %}>
+                    {{ opt }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Employee Count -->
+            <div class="mb-3">
+              <label class="hs-label" for="employee_count">{{ labels.employee_count }}</label>
+              <select name="employee_count" id="employee_count" class="hs-select" required>
+                <option value="">Select…</option>
+                {% for opt in valid_options.employee_count %}
+                  <option value="{{ opt }}"
+                    {% if profile and profile.employee_count == opt %}selected{% endif %}>
+                    {{ opt }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Server Purpose -->
+            <div class="mb-3">
+              <label class="hs-label" for="server_purpose">{{ labels.server_purpose }}</label>
+              <select name="server_purpose" id="server_purpose" class="hs-select" required>
+                <option value="">Select…</option>
+                {% for opt in valid_options.server_purpose %}
+                  <option value="{{ opt }}"
+                    {% if profile and profile.server_purpose == opt %}selected{% endif %}>
+                    {{ opt }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Sensitive Data -->
+            <div class="mb-3">
+              <label class="hs-label">{{ labels.sensitive_data }}</label>
+              <div class="d-flex gap-4">
+                {% for opt in valid_options.sensitive_data %}
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="sensitive_data"
+                           id="sd_{{ opt }}" value="{{ opt }}"
+                           {% if profile and profile.sensitive_data == opt %}checked{% endif %} required>
+                    <label class="form-check-label small" for="sd_{{ opt }}" style="color:#475569; font-weight:500;">{{ opt }}</label>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- IT Staff -->
+            <div class="mb-3">
+              <label class="hs-label">{{ labels.has_it_staff }}</label>
+              <div class="d-flex gap-4">
+                {% for opt in valid_options.has_it_staff %}
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="has_it_staff"
+                           id="it_{{ opt }}" value="{{ opt }}"
+                           {% if profile and profile.has_it_staff == opt %}checked{% endif %} required>
+                    <label class="form-check-label small" for="it_{{ opt }}" style="color:#475569; font-weight:500;">{{ opt }}</label>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Security Budget -->
+            <div class="mb-4">
+              <label class="hs-label" for="security_budget">{{ labels.security_budget }}</label>
+              <select name="security_budget" id="security_budget" class="hs-select" required>
+                <option value="">Select…</option>
+                {% for opt in valid_options.security_budget %}
+                  <option value="{{ opt }}"
+                    {% if profile and profile.security_budget == opt %}selected{% endif %}>
+                    {{ opt }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <button type="submit" class="btn-save">
+              <i class="bi bi-save"></i> Save Profile Settings
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right info -->
+    <div class="col-lg-5">
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-info-circle"></i> Impact on Scoring</span>
+        </div>
+        <div class="card-body-custom" style="font-size:0.85rem; color:#475569; line-height:1.6;">
+          <p>Context profile dynamically tweaks CVSS scoring to match your business threat model:</p>
+          <ul class="ps-3 mb-0" style="display:flex; flex-direction:column; gap:8px;">
+            <li><strong>High-Value Sectors:</strong> (Fintech, E-commerce) triggers a <strong>1.8×</strong> risk multiplier.</li>
+            <li><strong>Role Relevance:</strong> Database server vulnerabilities get elevated by <strong>+0.3–0.4</strong>.</li>
+            <li><strong>Customer Data:</strong> Storing user records adds a <strong>+0.4</strong> penalty.</li>
+            <li><strong>IT Staff Constraints:</strong> Lack of staff elevates priorities of automated remedies.</li>
+          </ul>
+        </div>
+      </div>
+
+      {% if profile %}
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-sliders"></i> Active Parameter Values</span>
+        </div>
+        <div class="card-body-custom p-0">
+          <table class="hs-table">
+            <tbody>
+              <tr><td class="text-muted">Business Name</td><td class="fw-bold">{{ profile.business_name }}</td></tr>
+              <tr><td class="text-muted">Sector</td><td>{{ profile.business_type }}</td></tr>
+              <tr><td class="text-muted">Scale</td><td>{{ profile.employee_count }} employees</td></tr>
+              <tr><td class="text-muted">Server Purpose</td><td>{{ profile.server_purpose }}</td></tr>
+              <tr><td class="text-muted">Customer Data</td><td>{{ profile.sensitive_data }}</td></tr>
+              <tr><td class="text-muted">Internal IT</td><td>{{ profile.has_it_staff }}</td></tr>
+              {% if profile.weights %}
+                <tr>
+                  <td class="text-muted">Context Weight Modifier</td>
+                  <td style="color:#6366f1; font-weight:700;">
+                    ×{{ "%.2f" | format(profile.weights.get('context_modifier', 1.0)) }}
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recommended Software Installer -->
+  <div id="softwareInstaller" class="mt-2" style="display:none;">
+    <div class="hs-card">
+      <div class="card-header-custom">
+        <span>
+          <i class="bi bi-box-seam"></i> Recommended Packages for
+          <span id="installerPurposeLabel" style="color:#6366f1; font-weight:800; margin-left:4px; text-transform:none;"></span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600;" onclick="refreshPackageStatuses()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Refresh Statuses
+        </button>
+      </div>
+      <div class="card-body-custom">
+        <p class="small text-muted mb-4">
+          One-click install packages recommended for your server role. Installs run as <code>apt-get install -y</code> — ensure your server has internet access.
+        </p>
+        <div id="packageGrid" class="row g-3"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 <!-- SSL Setup Modal -->
 <div class="modal fade" id="sslModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content bg-dark border-secondary">
-      <div class="modal-header border-secondary">
-        <h5 class="modal-title"><i class="bi bi-shield-lock me-2 text-cyan"></i>Setup SSL Certificate</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="background:#f8fafc; border-bottom:1px solid #f1f5f9;">
+        <h5 class="modal-title fw-bold" style="color:#0f172a; font-size:1.05rem;">
+          <i class="bi bi-shield-lock-fill text-primary me-2"></i>Setup SSL Certificate
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="padding:24px;">
+        
         <!-- Tab selector -->
-        <ul class="nav nav-pills mb-4" id="sslTabs">
+        <ul class="nav nav-pills mb-4" id="sslTabs" style="gap:10px;">
           <li class="nav-item">
-            <button class="nav-link active" onclick="showSslTab('selfsigned')">
+            <button class="nav-link active btn btn-sm" style="border-radius:20px; font-weight:700;" onclick="showSslTab('selfsigned')">
               <i class="bi bi-pc-display me-1"></i>IP Address (Self-Signed)
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" onclick="showSslTab('domain')">
+            <button class="nav-link btn btn-sm" style="border-radius:20px; font-weight:700;" onclick="showSslTab('domain')">
               <i class="bi bi-globe me-1"></i>Domain Name (Let's Encrypt)
             </button>
           </li>
@@ -236,53 +317,45 @@
         <!-- Self-signed tab -->
         <div id="tab-selfsigned">
           <p class="text-muted small mb-3">
-            No domain? Generate a <strong>self-signed certificate</strong> for your server IP.
-            Browser will show a warning — click <em>Advanced → Proceed</em>. Perfect for internal/research use.
+            No domain? Generate a <strong>self-signed certificate</strong> for your server IP. Browser will show a warning — click <em>Advanced → Proceed</em>. Perfect for internal/research use.
           </p>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Server IP or Hostname</label>
-            <input type="text" id="sslIpInput" class="form-control bg-dark border-secondary text-white"
-                   placeholder="e.g. 13.236.52.4">
+            <label class="hs-label" for="sslIpInput">Server IP or Hostname</label>
+            <input type="text" id="sslIpInput" class="hs-input" placeholder="e.g. 13.236.52.4">
           </div>
           <div id="sslSelfResult" class="mb-3"></div>
-          <button class="btn btn-cyan fw-semibold w-100" onclick="generateSelfSigned()">
-            <i class="bi bi-shield-lock me-2"></i>Generate &amp; Apply Self-Signed Certificate
+          <button class="btn btn-primary btn-sm fw-bold w-100 py-2" style="border-radius:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none;" onclick="generateSelfSigned()">
+            <i class="bi bi-shield-lock me-2"></i>Generate Self-Signed Certificate
           </button>
         </div>
 
         <!-- Domain tab -->
         <div id="tab-domain" style="display:none;">
           <p class="text-muted small mb-3">
-            Have a domain pointed to this server? Use <strong>Let's Encrypt</strong> for a free trusted certificate.
-            Make sure <strong>port 80</strong> is open in UFW first.
+            Have a domain pointed to this server? Use <strong>Let's Encrypt</strong> for a free trusted certificate. Make sure <strong>port 80</strong> is open in UFW first.
           </p>
           <div class="row g-2 mb-3">
             <div class="col-md-7">
-              <label class="form-label small fw-semibold">Domain Name</label>
-              <input type="text" id="sslDomainInput" class="form-control bg-dark border-secondary text-white"
-                     placeholder="e.g. buynova.duckdns.org">
+              <label class="hs-label" for="sslDomainInput">Domain Name</label>
+              <input type="text" id="sslDomainInput" class="hs-input" placeholder="e.g. buynova.duckdns.org">
             </div>
             <div class="col-md-5">
-              <label class="form-label small fw-semibold">Email (for renewal notices)</label>
-              <input type="email" id="sslEmailInput" class="form-control bg-dark border-secondary text-white"
-                     placeholder="you@example.com">
+              <label class="hs-label" for="sslEmailInput">Email (for renewal notices)</label>
+              <input type="email" id="sslEmailInput" class="hs-input" placeholder="you@example.com">
             </div>
           </div>
           <div id="certbotResult" class="mb-3"></div>
-          <button class="btn btn-cyan fw-semibold w-100" onclick="runCertbot()">
+          <button class="btn btn-primary btn-sm fw-bold w-100 py-2" style="border-radius:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none;" onclick="runCertbot()">
             <i class="bi bi-shield-lock me-2"></i>Issue Let's Encrypt Certificate
           </button>
-          <div class="alert alert-warning py-2 small mt-3">
-            <i class="bi bi-exclamation-triangle me-1"></i>
-            No domain yet? Get a free subdomain from
-            <a href="https://www.duckdns.org" target="_blank" class="text-cyan">DuckDNS</a> or
-            <a href="https://www.noip.com" target="_blank" class="text-cyan">No-IP</a> —
-            point it to your server IP, then come back here.
+          <div class="alert alert-warning py-2 small mt-3" style="border-radius:10px; background:#fff7ed; color:#c2410c; border:none; display:flex; align-items:center; gap:6px;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>No domain yet? Get a free subdomain from <a href="https://www.duckdns.org" target="_blank" style="color:#c2410c; text-decoration:underline;">DuckDNS</a>.</span>
           </div>
         </div>
       </div>
-      <div class="modal-footer border-secondary">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #f1f5f9;">
+        <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600;" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -290,15 +363,18 @@
 
 <!-- CyberPanel install guide modal -->
 <div class="modal fade" id="cyberPanelModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content bg-dark border-secondary">
-      <div class="modal-header border-secondary">
-        <h5 class="modal-title"><i class="bi bi-server me-2 text-cyan"></i>CyberPanel Installation Guide</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="background:#f8fafc; border-bottom:1px solid #f1f5f9;">
+        <h5 class="modal-title fw-bold" style="color:#0f172a; font-size:1.05rem;">
+          <i class="bi bi-server me-2 text-primary"></i>CyberPanel Installation Guide
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="cyberPanelModalBody"></div>
-      <div class="modal-footer border-secondary">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      <div class="modal-body" id="cyberPanelModalBody" style="padding:24px; font-size:0.9rem; color:#475569; line-height:1.6;">
+      </div>
+      <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #f1f5f9;">
+        <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600;" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -354,23 +430,21 @@ function renderPackages(packages) {
   const grid = document.getElementById('packageGrid');
   grid.innerHTML = packages.map((p, i) => `
     <div class="col-md-4 col-sm-6" id="pkgcol-${i}">
-      <div class="card bg-dark border-secondary h-100">
-        <div class="card-body d-flex flex-column gap-2">
-          <div class="d-flex justify-content-between align-items-start">
-            <span class="fw-semibold small text-white">${p.label}</span>
-            <span id="status-${i}" class="badge bg-secondary">Checking…</span>
-          </div>
-          <div class="text-muted" style="font-size:0.75rem;">${p.desc}</div>
-          <div class="mt-auto pt-1 d-flex gap-2">
-            <button id="btn-install-${i}" class="btn btn-sm btn-outline-cyan flex-grow-1"
-                    onclick="installPackage(${i})" disabled>
-              <i class="bi bi-download me-1"></i>Install
-            </button>
-            <button id="btn-uninstall-${i}" class="btn btn-sm btn-outline-danger flex-grow-1"
-                    onclick="uninstallPackage(${i})" style="display:none;">
-              <i class="bi bi-trash me-1"></i>Uninstall
-            </button>
-          </div>
+      <div class="pkg-card p-3 d-flex flex-column gap-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <span class="fw-bold small text-dark">${p.label}</span>
+          <span id="status-${i}" class="badge-pkg-absent">Checking…</span>
+        </div>
+        <div class="text-muted" style="font-size:0.75rem;">${p.desc}</div>
+        <div class="mt-auto pt-1 d-flex gap-2">
+          <button id="btn-install-${i}" class="btn btn-sm btn-outline-primary btn-pkg flex-grow-1"
+                  onclick="installPackage(${i})" disabled>
+            <i class="bi bi-download me-1"></i>Install
+          </button>
+          <button id="btn-uninstall-${i}" class="btn btn-sm btn-outline-danger btn-pkg flex-grow-1"
+                  onclick="uninstallPackage(${i})" style="display:none;">
+            <i class="bi bi-trash me-1"></i>Uninstall
+          </button>
         </div>
       </div>
     </div>`).join('');
@@ -381,25 +455,25 @@ function setInstalled(i, version) {
   const badge = document.getElementById('status-' + i);
   const btnI  = document.getElementById('btn-install-' + i);
   const btnU  = document.getElementById('btn-uninstall-' + i);
-  badge.className = 'badge bg-success';
+  badge.className = 'badge-pkg-installed';
   badge.textContent = version || 'Installed';
   btnI.style.display = 'none';
   btnU.style.display = '';
   btnU.disabled = false;
   btnU.innerHTML = '<i class="bi bi-trash me-1"></i>Uninstall';
-  btnU.className = 'btn btn-sm btn-outline-danger flex-grow-1';
+  btnU.className = 'btn btn-sm btn-outline-danger btn-pkg flex-grow-1';
 }
 
 function setNotInstalled(i) {
   const badge = document.getElementById('status-' + i);
   const btnI  = document.getElementById('btn-install-' + i);
   const btnU  = document.getElementById('btn-uninstall-' + i);
-  badge.className = 'badge bg-secondary';
+  badge.className = 'badge-pkg-absent';
   badge.textContent = 'Not installed';
   btnI.style.display = '';
   btnI.disabled = false;
   btnI.innerHTML = '<i class="bi bi-download me-1"></i>Install';
-  btnI.className = 'btn btn-sm btn-outline-cyan flex-grow-1';
+  btnI.className = 'btn btn-sm btn-outline-primary btn-pkg flex-grow-1';
   btnU.style.display = 'none';
 }
 
@@ -421,7 +495,6 @@ async function refreshPackageStatuses() {
           btnU.innerHTML = '<i class="bi bi-info-circle me-1"></i>Remove guide';
           btnU.onclick = () => showCyberPanelModal('uninstall');
         }
-        // Certbot: show SSL buttons
         if (p.name === 'certbot') {
           if (info.ssl_active) {
             setCertbotSSLActive(i);
@@ -449,7 +522,7 @@ async function installPackage(i) {
   const badge = document.getElementById('status-' + i);
   btnI.disabled = true;
   btnI.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Installing…';
-  badge.className = 'badge bg-warning text-dark';
+  badge.className = 'badge-pkg-pending';
   badge.textContent = 'Installing…';
   try {
     const res = await fetch('/api/actions/packages/install', {
@@ -461,17 +534,17 @@ async function installPackage(i) {
     if (data.ok) {
       setInstalled(i, data.version);
     } else {
-      badge.className = 'badge bg-danger';
+      badge.className = 'badge-pkg-absent';
       badge.textContent = 'Failed';
       btnI.disabled = false;
-      btnI.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Retry';
+      btnI.innerHTML = '<i class="bi-exclamation-triangle me-1"></i>Retry';
       alert('Install failed: ' + (data.error || 'Unknown error'));
     }
   } catch(e) {
-    badge.className = 'badge bg-danger';
+    badge.className = 'badge-pkg-absent';
     badge.textContent = 'Error';
     btnI.disabled = false;
-    btnI.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Retry';
+    btnI.innerHTML = '<i class="bi-exclamation-triangle me-1"></i>Retry';
   }
 }
 
@@ -485,7 +558,7 @@ async function uninstallPackage(i) {
   const badge = document.getElementById('status-' + i);
   btnU.disabled = true;
   btnU.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Removing…';
-  badge.className = 'badge bg-warning text-dark';
+  badge.className = 'badge-pkg-pending';
   badge.textContent = 'Removing…';
   try {
     const res = await fetch('/api/actions/packages/uninstall', {
@@ -497,14 +570,14 @@ async function uninstallPackage(i) {
     if (data.ok) {
       setNotInstalled(i);
     } else {
-      badge.className = 'badge bg-danger';
+      badge.className = 'badge-pkg-absent';
       badge.textContent = 'Failed';
       btnU.disabled = false;
       btnU.innerHTML = '<i class="bi bi-trash me-1"></i>Uninstall';
       alert('Uninstall failed: ' + (data.error || 'Unknown error'));
     }
   } catch(e) {
-    badge.className = 'badge bg-danger';
+    badge.className = 'badge-pkg-absent';
     badge.textContent = 'Error';
     btnU.disabled = false;
     btnU.innerHTML = '<i class="bi bi-trash me-1"></i>Uninstall';
@@ -515,33 +588,31 @@ function showCyberPanelModal(mode) {
   const body = document.getElementById('cyberPanelModalBody');
   if (mode === 'install') {
     body.innerHTML = `
-      <p class="text-muted small mb-3">CyberPanel uses a custom installer and cannot be installed via <code>apt-get</code>.
-      Run the following commands on your server as <strong>root</strong>:</p>
-      <div class="bg-black rounded p-3 mb-3 font-monospace small text-success">
+      <p class="text-muted small mb-3">CyberPanel uses a custom installer and cannot be installed via <code>apt-get</code>. Run the following commands on your server as <strong>root</strong>:</p>
+      <div class="rounded p-3 mb-3 font-monospace small text-success" style="background:#0f172a;">
         <div>sudo su -</div>
         <div>sh &lt;(curl https://cyberpanel.net/install.sh)</div>
       </div>
       <p class="text-muted small mb-2">The installer will ask a few questions. Recommended answers for a basic setup:</p>
-      <ul class="small text-muted">
+      <ul class="small text-muted ps-3 mb-3" style="display:flex; flex-direction:column; gap:4px;">
         <li>Install CyberPanel → <strong>1</strong> (with OpenLiteSpeed)</li>
         <li>Full installation → <strong>y</strong></li>
         <li>Install Memcached → <strong>n</strong></li>
         <li>Install Redis → <strong>n</strong> (unless needed)</li>
         <li>Remote MySQL → <strong>n</strong></li>
       </ul>
-      <div class="alert alert-warning py-2 small">
+      <div class="alert alert-warning py-2 small" style="border-radius:10px; background:#fff7ed; color:#c2410c; border:none;">
         <i class="bi bi-exclamation-triangle me-1"></i>
-        Installation takes <strong>10–30 minutes</strong>. Access CyberPanel at
-        <code>https://&lt;your-ip&gt;:8090</code> after install.
+        Installation takes <strong>10–30 minutes</strong>. Access CyberPanel at <code>https://&lt;your-ip&gt;:8090</code> after install.
       </div>`;
   } else {
     body.innerHTML = `
       <p class="text-muted small mb-3">To fully remove CyberPanel, run as <strong>root</strong>:</p>
-      <div class="bg-black rounded p-3 mb-3 font-monospace small text-danger">
+      <div class="rounded p-3 mb-3 font-monospace small text-danger" style="background:#0f172a;">
         <div>sudo su -</div>
         <div>sh &lt;(curl https://cyberpanel.net/install.sh) uninstall</div>
       </div>
-      <div class="alert alert-danger py-2 small">
+      <div class="alert alert-danger py-2 small" style="border-radius:10px; background:#fee2e2; color:#b91c1c; border:none;">
         <i class="bi bi-exclamation-triangle me-1"></i>
         This removes CyberPanel and all associated services. Websites and databases will be lost.
       </div>`;
@@ -572,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── Certbot card states ────────────────────────────────────────
 function _certbotIndex() {
   return currentPackages.findIndex(p => p.name === 'certbot');
 }
@@ -581,21 +651,19 @@ function setCertbotSetupSSL(i) {
   const btnI = document.getElementById('btn-install-' + i);
   const btnU = document.getElementById('btn-uninstall-' + i);
   const badge = document.getElementById('status-' + i);
-  badge.className = 'badge bg-success';
+  badge.className = 'badge-pkg-installed';
   badge.textContent = currentPackages[i]?.version || 'Installed';
   btnI.style.display = 'none';
-  // Uninstall button
   btnU.style.display = '';
-  btnU.className = 'btn btn-sm btn-outline-danger';
+  btnU.className = 'btn btn-sm btn-outline-danger btn-pkg';
   btnU.style.minWidth = '80px';
   btnU.innerHTML = '<i class="bi bi-trash me-1"></i>Uninstall';
   btnU.onclick = () => uninstallPackage(i);
-  // Insert Setup SSL button before uninstall
   let sslBtn = document.getElementById('btn-sslsetup-' + i);
   if (!sslBtn) {
     sslBtn = document.createElement('button');
     sslBtn.id = 'btn-sslsetup-' + i;
-    sslBtn.className = 'btn btn-sm btn-outline-cyan flex-grow-1';
+    sslBtn.className = 'btn btn-sm btn-outline-primary btn-pkg flex-grow-1';
     btnU.parentNode.insertBefore(sslBtn, btnU);
   }
   sslBtn.style.display = '';
@@ -607,30 +675,27 @@ function setCertbotSSLActive(i) {
   const btnI = document.getElementById('btn-install-' + i);
   const btnU = document.getElementById('btn-uninstall-' + i);
   const badge = document.getElementById('status-' + i);
-  badge.className = 'badge bg-success';
+  badge.className = 'badge-pkg-installed';
   badge.textContent = currentPackages[i]?.version || 'Installed';
   btnI.style.display = 'none';
-  // Uninstall button
   btnU.style.display = '';
-  btnU.className = 'btn btn-sm btn-outline-danger';
+  btnU.className = 'btn btn-sm btn-outline-danger btn-pkg';
   btnU.style.minWidth = '80px';
   btnU.innerHTML = '<i class="bi bi-trash me-1"></i>Uninstall';
   btnU.onclick = () => uninstallPackage(i);
-  // SSL Active button (reconfigure)
   let sslBtn = document.getElementById('btn-sslsetup-' + i);
   if (!sslBtn) {
     sslBtn = document.createElement('button');
     sslBtn.id = 'btn-sslsetup-' + i;
-    sslBtn.className = 'btn btn-sm btn-success flex-grow-1';
+    sslBtn.className = 'btn btn-sm btn-success btn-pkg flex-grow-1';
     btnU.parentNode.insertBefore(sslBtn, btnU);
   }
   sslBtn.style.display = '';
-  sslBtn.className = 'btn btn-sm btn-success flex-grow-1';
+  sslBtn.className = 'btn btn-sm btn-success btn-pkg flex-grow-1';
   sslBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i>SSL Active';
   sslBtn.onclick = () => new bootstrap.Modal(document.getElementById('sslModal')).show();
 }
 
-// ── SSL Modal ──────────────────────────────────────────────────
 function showSslTab(tab) {
   document.getElementById('tab-selfsigned').style.display = tab === 'selfsigned' ? '' : 'none';
   document.getElementById('tab-domain').style.display     = tab === 'domain'     ? '' : 'none';
@@ -643,10 +708,10 @@ async function runCertbot() {
   const domain = document.getElementById('sslDomainInput').value.trim();
   const email  = document.getElementById('sslEmailInput').value.trim();
   if (!domain) { alert('Enter your domain name.'); return; }
-  const btn = document.querySelector('#tab-domain button.btn-cyan');
+  const btn = document.querySelector('#tab-domain button.btn-primary');
   const res  = document.getElementById('certbotResult');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running Certbot — this may take 30–60 seconds…';
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running Certbot…';
   res.innerHTML = '';
   try {
     const r = await fetch('/api/actions/ssl/certbot', {
@@ -659,23 +724,23 @@ async function runCertbot() {
       const ci = _certbotIndex();
       if (ci >= 0) setCertbotSSLActive(ci);
       res.innerHTML = `
-        <div class="alert alert-success py-2 small">
+        <div class="alert alert-success py-2 small" style="border-radius:10px; background:#dcfce7; color:#16a34a; border:none; margin-top:14px;">
           <i class="bi bi-check-circle me-1"></i>
           <strong>SSL certificate issued successfully!</strong><br>
           Certificate applied to .env automatically.<br>
           Restart the service to activate HTTPS:<br>
           <code>systemctl restart hybridsec</code>
         </div>
-        <div class="bg-black rounded p-2 font-monospace small text-muted" style="max-height:120px;overflow-y:auto;">${data.output}</div>`;
+        <div class="rounded p-2 font-monospace small text-muted" style="background:#0f172a; max-height:120px;overflow-y:auto;">${data.output}</div>`;
     } else {
       res.innerHTML = `
-        <div class="alert alert-danger py-2 small">
+        <div class="alert alert-danger py-2 small" style="border-radius:10px; background:#fee2e2; color:#b91c1c; border:none; margin-top:14px;">
           <i class="bi bi-exclamation-triangle me-1"></i>${data.error || 'Certbot failed'}
         </div>
-        <div class="bg-black rounded p-2 font-monospace small text-muted" style="max-height:120px;overflow-y:auto;">${data.output || ''}</div>`;
+        <div class="rounded p-2 font-monospace small text-muted" style="background:#0f172a; max-height:120px;overflow-y:auto;">${data.output || ''}</div>`;
     }
   } catch(e) {
-    res.innerHTML = `<div class="alert alert-danger py-2 small">Request failed: ${e}</div>`;
+    res.innerHTML = `<div class="alert alert-danger py-2 small" style="border-radius:10px; background:#fee2e2; color:#b91c1c; border:none; margin-top:14px;">Request failed: ${e}</div>`;
   }
   btn.disabled = false;
   btn.innerHTML = '<i class="bi bi-shield-lock me-2"></i>Issue Let\'s Encrypt Certificate';
@@ -684,7 +749,7 @@ async function runCertbot() {
 async function generateSelfSigned() {
   const ip = document.getElementById('sslIpInput').value.trim();
   if (!ip) { alert('Enter your server IP or hostname.'); return; }
-  const btn = document.querySelector('#tab-selfsigned button.btn-cyan');
+  const btn = document.querySelector('#tab-selfsigned button.btn-primary');
   const res  = document.getElementById('sslSelfResult');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating…';
@@ -700,17 +765,17 @@ async function generateSelfSigned() {
       const ci = _certbotIndex();
       if (ci >= 0) setCertbotSSLActive(ci);
       res.innerHTML = `
-        <div class="alert alert-success py-2 small">
+        <div class="alert alert-success py-2 small" style="border-radius:10px; background:#dcfce7; color:#16a34a; border:none; margin-top:14px;">
           <i class="bi bi-check-circle me-1"></i>
           Certificate generated and applied!<br>
           Restart the service to activate HTTPS on port 5443:<br>
           <code>systemctl restart hybridsec</code>
         </div>`;
     } else {
-      res.innerHTML = `<div class="alert alert-danger py-2 small">${data.error || 'Failed'}</div>`;
+      res.innerHTML = `<div class="alert alert-danger py-2 small" style="border-radius:10px; background:#fee2e2; color:#b91c1c; border:none; margin-top:14px;">${data.error || 'Failed'}</div>`;
     }
   } catch(e) {
-    res.innerHTML = `<div class="alert alert-danger py-2 small">Request failed: ${e}</div>`;
+    res.innerHTML = `<div class="alert alert-danger py-2 small" style="border-radius:10px; background:#fee2e2; color:#b91c1c; border:none; margin-top:14px;">Request failed: ${e}</div>`;
   }
   btn.disabled = false;
   btn.innerHTML = '<i class="bi bi-shield-lock me-2"></i>Generate &amp; Apply Self-Signed Certificate';

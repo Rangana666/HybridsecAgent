@@ -1,120 +1,165 @@
 {% extends "base.html" %}
 {% block title %}Setup 2FA — HybridSec{% endblock %}
 
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .setup-page { padding: 28px 32px; }
+
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
+
+  .hs-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .hs-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="mb-4">
-  <h4 class="fw-bold mb-0">Two-Factor Authentication Setup</h4>
-</div>
+<div class="setup-page">
 
-<div class="row justify-content-center">
-  <div class="col-lg-6">
-
-    {% if step == 'status' %}
-    <!-- Step 0: Show current status and offer to generate -->
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-shield-lock me-1"></i>
-        {{ 'Manage 2FA' if user.totp_enabled else 'Enable 2FA' }}
-      </div>
-      <div class="card-body text-center py-5">
-        {% if user.totp_enabled %}
-          <i class="bi bi-shield-check text-success" style="font-size:3rem;"></i>
-          <h5 class="mt-3">2FA is currently <span class="text-success">enabled</span></h5>
-          <p class="text-muted">Your account is protected with an authenticator app.</p>
-          <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" name="action" value="disable">
-            <button class="btn btn-outline-warning"
-                    onclick="return confirm('Disable 2FA? This reduces account security.')">
-              <i class="bi bi-shield-x me-2"></i>Disable 2FA
-            </button>
-          </form>
-        {% else %}
-          <i class="bi bi-shield-exclamation text-warning" style="font-size:3rem;"></i>
-          <h5 class="mt-3">2FA is currently <span class="text-warning">disabled</span></h5>
-          <p class="text-muted">Enable 2FA to add an extra layer of security to your account.</p>
-          <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" name="action" value="generate">
-            <button class="btn btn-success">
-              <i class="bi bi-shield-lock me-2"></i>Generate 2FA QR Code
-            </button>
-          </form>
-        {% endif %}
-      </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">🔒 Two-Factor Authentication Setup</h4>
     </div>
+  </div>
 
-    {% elif step == 'confirm' %}
-    <!-- Step 1: Show QR code and confirm with OTP -->
-    <div class="card">
-      <div class="card-header small fw-semibold text-muted">
-        <i class="bi bi-qr-code me-1"></i>Scan QR Code
-      </div>
-      <div class="card-body">
-        <p class="text-muted small mb-3">
-          1. Open Google Authenticator (or any TOTP app).<br>
-          2. Tap <strong>+</strong> → <strong>Scan QR code</strong>.<br>
-          3. Scan the QR code below, or enter the secret manually.<br>
-          4. Enter the 6-digit code to confirm.
-        </p>
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
 
-        <!-- QR code: server-side if available, else client-side canvas -->
-        <div class="text-center mb-3">
-          {% if qr_b64 %}
-            <img src="data:image/png;base64,{{ qr_b64 }}"
-                 alt="2FA QR Code" width="200" height="200"
-                 class="p-2 bg-white rounded">
+      {% if step == 'status' %}
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-shield-lock"></i> 2FA Status</span>
+        </div>
+        <div class="card-body-custom text-center py-5">
+          {% if user.totp_enabled %}
+            <i class="bi bi-shield-check text-success" style="font-size:3.5rem;"></i>
+            <h5 class="mt-3 fw-bold">2FA is <span class="text-success">enabled</span></h5>
+            <p class="text-muted small mb-4">Your account is fully protected with an authenticator app.</p>
+            <form method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="action" value="disable">
+              <button class="btn btn-outline-warning fw-bold px-4" style="border-radius:10px;"
+                      onclick="return confirm('Disable 2FA? This reduces account security.')">
+                <i class="bi bi-shield-x me-2"></i>Disable 2FA
+              </button>
+            </form>
           {% else %}
-            <canvas id="qrcanvas" class="p-2 bg-white rounded"></canvas>
-            <script>
-            (function(){
-              var uri = {{ provisioning_uri | tojson }};
-              var cvs = document.getElementById('qrcanvas');
-              // Dynamically load the qrcode library (no SRI so it won't be blocked)
-              var s = document.createElement('script');
-              s.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
-              s.onload = function(){
-                QRCode.toCanvas(cvs, uri, {width:200, margin:2}, function(err){
-                  if(err){ cvs.parentNode.innerHTML =
-                    '<div class="alert alert-warning small">QR unavailable — use manual secret below.</div>'; }
-                });
-              };
-              s.onerror = function(){
-                cvs.parentNode.innerHTML =
-                  '<div class="alert alert-warning small">QR unavailable — use manual secret below.</div>';
-              };
-              document.head.appendChild(s);
-            })();
-            </script>
+            <i class="bi bi-shield-exclamation text-warning" style="font-size:3.5rem;"></i>
+            <h5 class="mt-3 fw-bold">2FA is <span class="text-warning">disabled</span></h5>
+            <p class="text-muted small mb-4">Enable 2FA to require a secure code at each login session.</p>
+            <form method="POST">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="action" value="generate">
+              <button class="btn btn-success fw-bold px-4 py-2" style="border-radius:10px; background:#16a34a; border:none;">
+                <i class="bi bi-shield-lock me-2"></i>Generate 2FA QR Code
+              </button>
+            </form>
           {% endif %}
         </div>
+      </div>
 
-        <div class="alert alert-secondary py-2 small font-monospace mb-3">
-          <strong>Manual secret:</strong> {{ totp_secret }}
+      {% elif step == 'confirm' %}
+      <div class="hs-card">
+        <div class="card-header-custom">
+          <span><i class="bi bi-qr-code"></i> Scan QR Code</span>
         </div>
+        <div class="card-body-custom">
+          <p class="text-muted small mb-4" style="line-height:1.6;">
+            1. Open Google Authenticator (or any TOTP app).<br>
+            2. Tap <strong>+</strong> → <strong>Scan QR code</strong>.<br>
+            3. Scan the QR code below, or enter the secret manually.<br>
+            4. Enter the 6-digit code to confirm.
+          </p>
 
-        <form method="POST">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input type="hidden" name="action" value="confirm">
-          <input type="hidden" name="totp_secret" value="{{ totp_secret }}">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Enter the 6-digit code to confirm:</label>
-            <input type="text" name="otp_code"
-                   class="form-control form-control-lg text-center bg-dark border-secondary text-white"
-                   maxlength="6" placeholder="000000" required autofocus
-                   style="letter-spacing:0.5rem; font-size:1.6rem;">
+          <div class="text-center mb-4">
+            {% if qr_b64 %}
+              <img src="data:image/png;base64,{{ qr_b64 }}"
+                   alt="2FA QR Code" width="200" height="200"
+                   class="p-2 bg-white rounded border border-light-subtle">
+            {% else %}
+              <canvas id="qrcanvas" class="p-2 bg-white rounded border border-light-subtle"></canvas>
+              <script>
+              (function(){
+                var uri = {{ provisioning_uri | tojson }};
+                var cvs = document.getElementById('qrcanvas');
+                var s = document.createElement('script');
+                s.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
+                s.onload = function(){
+                  QRCode.toCanvas(cvs, uri, {width:200, margin:2}, function(err){
+                    if(err){ cvs.parentNode.innerHTML =
+                      '<div class="alert alert-warning small">QR unavailable — use manual secret below.</div>'; }
+                  });
+                };
+                s.onerror = function(){
+                  cvs.parentNode.innerHTML =
+                    '<div class="alert alert-warning small">QR unavailable — use manual secret below.</div>';
+                };
+                document.head.appendChild(s);
+              })();
+              </script>
+            {% endif %}
           </div>
-          <button type="submit" class="btn btn-success w-100 fw-semibold">
-            <i class="bi bi-check2-circle me-2"></i>Verify and Enable 2FA
-          </button>
-        </form>
-        <div class="text-center mt-3">
-          <a href="{{ url_for('routes.settings') }}" class="text-muted small">Cancel</a>
+
+          <div class="alert alert-secondary py-2 small font-monospace text-center mb-4" style="border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0; color:#334155;">
+            <strong>Secret Key:</strong> {{ totp_secret }}
+          </div>
+
+          <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="confirm">
+            <input type="hidden" name="totp_secret" value="{{ totp_secret }}">
+            <div class="mb-4">
+              <label class="form-label small fw-bold" style="color:#374151;">6-digit Authenticator Code</label>
+              <input type="text" name="otp_code"
+                     class="hs-input text-center"
+                     maxlength="6" placeholder="000000" required autofocus
+                     style="letter-spacing:0.5rem; font-size:1.6rem; font-weight:700;">
+            </div>
+            <button type="submit" class="btn btn-success w-100 fw-bold py-2" style="border-radius:10px; background:#16a34a; border:none;">
+              <i class="bi bi-check2-circle me-2"></i>Verify and Enable 2FA
+            </button>
+          </form>
+          <div class="text-center mt-3">
+            <a href="{{ url_for('routes.settings') }}" class="text-muted small" style="text-decoration:none;">Cancel</a>
+          </div>
         </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
+    </div>
   </div>
 </div>
 {% endblock %}

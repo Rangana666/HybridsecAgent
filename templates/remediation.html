@@ -1,159 +1,260 @@
 {% extends "base.html" %}
-{% block title %}Remediation — HybridSec{% endblock %}
+{% block title %}🔧 Remediation — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .remed-page { padding: 28px 32px; }
+
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #16a34a; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 20px; }
+
+  /* Table styling */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  .hs-table th { padding: 12px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .hs-table td { padding: 14px 16px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .hs-table tbody tr:hover { background-color: #f8fafc; }
+
+  /* Remediations list */
+  .remed-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .remed-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  }
+  .remed-card.autofix-true { border-left: 5px solid #22c55e; }
+  .remed-card.autofix-false { border-left: 5px solid #64748b; }
+
+  .badge-autofix { background: #dcfce7; color: #16a34a; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  .badge-manual  { background: #f1f5f9; color: #64748b; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+
+  .badge-risk-critical { background: #fee2e2; color: #ef4444; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge-risk-high     { background: #fff7ed; color: #f97316; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge-risk-medium   { background: #eff6ff; color: #3b82f6; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge-risk-low      { background: #f0fdf4; color: #22c55e; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+
+  .btn-apply-fix {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    color: #fff; border: none; font-weight: 700; font-size: 0.82rem;
+    padding: 8px 16px; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 6px;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+  }
+  .btn-apply-fix:hover { opacity: 0.92; color: #fff; transform: translateY(-1px); }
+
+  /* Accordion overrides */
+  .accordion-button-custom {
+    background: #f8fafc;
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px !important;
+    padding: 8px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; text-align: left;
+    margin-top: 10px;
+  }
+  
+  .empty-state {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    text-align: center;
+    padding: 48px 20px;
+  }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0f4ff,#ede9fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #6366f1;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Remediation</h4>
-    <p class="text-muted small mb-0">
-      {{ remediations | length }} fix recommendations &mdash;
-      {{ remediations | selectattr('autofix_available') | list | length }} auto-fixable
-    </p>
-  </div>
-</div>
+<div class="remed-page">
 
-<!-- Recent Fixes -->
-{% if recent_fixes %}
-<div class="card mb-4 border-success border-opacity-50">
-  <div class="card-header small fw-semibold text-muted">
-    <i class="bi bi-clock-history me-1"></i>Recent Auto-Fixes (click Rollback to undo)
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-dark table-hover mb-0 small">
-        <thead><tr class="text-muted">
-          <th>Vulnerability</th><th>Config File</th><th>Applied At</th><th></th>
-        </tr></thead>
-        <tbody>
-          {% for fix in recent_fixes[:5] %}
-          <tr>
-            <td>{{ fix.vuln_type }}</td>
-            <td class="font-monospace text-muted" style="font-size:0.75rem;">
-              {{ fix.original_path }}
-            </td>
-            <td>{{ (fix.created_at or '')[:16].replace('T',' ') }}</td>
-            <td>
-              {% if not fix.restored %}
-                <button class="btn btn-sm btn-outline-warning btn-rollback"
-                        data-backup-id="{{ fix.backup_id }}">
-                  <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
-                </button>
-              {% else %}
-                <div class="d-flex align-items-center gap-2">
-                  <span class="badge bg-secondary">Rolled back</span>
-                  <button class="btn btn-sm btn-outline-danger btn-delete-fix"
-                          data-backup-id="{{ fix.backup_id }}"
-                          title="Clear this entry">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <!-- Title block -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">🔧 Remediation</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">
+        {{ remediations | length }} fix recommendations &mdash;
+        {{ remediations | selectattr('autofix_available') | list | length }} auto-fixable
+      </p>
     </div>
   </div>
-</div>
-{% endif %}
 
-<!-- Remediation Cards -->
-{% if remediations %}
-  <div class="row g-3">
-    {% for r in remediations %}
-      <div class="col-12">
-        <div class="card
-          {% if r.autofix_available %}border-success border-opacity-50{% else %}border-secondary{% endif %}">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start gap-3">
-              <div class="flex-grow-1">
-                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                  {% if r.autofix_available %}
-                    <span class="badge bg-success">
-                      <i class="bi bi-lightning-fill me-1"></i>AUTO-FIX
-                    </span>
-                  {% else %}
-                    <span class="badge bg-secondary">
-                      <i class="bi bi-list-check me-1"></i>MANUAL
-                    </span>
-                  {% endif %}
-                  <span class="badge
-                    {% if r.risk_level == 'high' %}bg-warning text-dark
-                    {% elif r.risk_level == 'critical' %}bg-danger
-                    {% elif r.risk_level == 'low' %}bg-success
-                    {% else %}bg-info text-dark{% endif %}">
-                    Risk: {{ r.risk_level | upper }}
-                  </span>
-                  <span class="fw-semibold">{{ r.title }}</span>
-                </div>
-                <p class="text-muted small mb-2">{{ r.description }}</p>
+  <!-- Recent Auto-Fixes -->
+  {% if recent_fixes %}
+  <div class="hs-card" style="border-color:#bbf7d0 !important;">
+    <div class="card-header-custom" style="background:#f0fdf4 !important; border-bottom-color:#bbf7d0 !important; color:#15803d !important;">
+      <span><i class="bi bi-clock-history" style="color:#16a34a;"></i> Recent Auto-Fixes (click Rollback to undo)</span>
+    </div>
+    <div class="card-body-custom p-0">
+      <div class="table-responsive">
+        <table class="hs-table">
+          <thead>
+            <tr>
+              <th>Vulnerability</th>
+              <th>Config File</th>
+              <th>Applied At</th>
+              <th style="width: 140px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fix in recent_fixes[:5] %}
+            <tr>
+              <td style="font-weight:700; color:#1e293b;">{{ fix.vuln_type }}</td>
+              <td class="font-monospace text-muted" style="font-size:0.75rem;">{{ fix.original_path }}</td>
+              <td style="color:#64748b;">{{ (fix.created_at or '')[:16].replace('T',' ') }}</td>
+              <td class="text-end">
+                {% if not fix.restored %}
+                  <button class="btn btn-sm btn-outline-warning btn-rollback" style="border-radius:8px; font-weight:700;"
+                          data-backup-id="{{ fix.backup_id }}">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
+                  </button>
+                {% else %}
+                  <div class="d-flex align-items-center gap-2 justify-content-end">
+                    <span class="badge bg-secondary" style="font-size:0.7rem; font-weight:600; padding:4px 8px; border-radius:12px;">Rolled back</span>
+                    <button class="btn btn-sm btn-outline-danger btn-delete-fix" style="border-radius:8px;"
+                            data-backup-id="{{ fix.backup_id }}"
+                            title="Clear this entry">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-                <!-- Manual steps (collapsed) -->
-                {% if r.manual_steps %}
-                  <div class="accordion accordion-flush" id="acc_{{ loop.index }}">
-                    <div class="accordion-item bg-transparent border-secondary">
-                      <h2 class="accordion-header">
-                        <button class="accordion-button collapsed bg-transparent text-white small py-2"
-                                type="button" data-bs-toggle="collapse"
-                                data-bs-target="#steps_{{ loop.index }}">
-                          <i class="bi bi-list-ol me-2"></i>Manual Steps ({{ r.manual_steps | length }})
-                        </button>
-                      </h2>
-                      <div id="steps_{{ loop.index }}" class="accordion-collapse collapse">
-                        <div class="accordion-body py-2">
+  <!-- Remediation Recommendations -->
+  {% if remediations %}
+    <div class="row g-3">
+      {% for r in remediations %}
+        <div class="col-12">
+          <div class="remed-card autofix-{{ 'true' if r.autofix_available else 'false' }}">
+            <div style="padding: 20px;">
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap flex-sm-nowrap">
+                
+                <div class="flex-grow-1">
+                  <!-- Header Badges -->
+                  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    {% if r.autofix_available %}
+                      <span class="badge-autofix"><i class="bi bi-lightning-fill"></i> Auto-Fix</span>
+                    {% else %}
+                      <span class="badge-manual"><i class="bi bi-list-check"></i> Manual Only</span>
+                    {% endif %}
+                    
+                    <span class="{% if r.risk_level == 'critical' %}badge-risk-critical{% elif r.risk_level == 'high' %}badge-risk-high{% elif r.risk_level == 'medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
+                      Risk: {{ r.risk_level | upper }}
+                    </span>
+                    <span class="fw-bold" style="color:#0f172a; font-size:1rem; margin-left:4px;">{{ r.title }}</span>
+                  </div>
+
+                  <p style="font-size: 0.85rem; color:#475569; line-height:1.6; margin-bottom:12px;">{{ r.description }}</p>
+
+                  <!-- Manual steps accordion -->
+                  {% if r.manual_steps %}
+                    <div style="margin-top:10px;">
+                      <button class="accordion-button-custom collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#steps_{{ loop.index }}">
+                        <span><i class="bi bi-list-ol me-2"></i>Manual Steps ({{ r.manual_steps | length }})</span>
+                        <i class="bi bi-chevron-down ms-auto" style="font-size:0.75rem;"></i>
+                      </button>
+                      <div id="steps_{{ loop.index }}" class="collapse mt-2">
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
                           {% for step in r.manual_steps %}
-                            <div class="text-muted small font-monospace">{{ step }}</div>
+                            <div style="font-family:monospace; font-size:0.8rem; color:#334155; margin-bottom:6px; word-break:break-all;">{{ step }}</div>
                           {% endfor %}
                         </div>
                       </div>
                     </div>
-                  </div>
-                {% endif %}
-              </div>
-
-              <!-- Action buttons -->
-              <div class="d-flex flex-column gap-2" style="min-width:130px;">
-                <div class="text-muted small text-end">
-                  <i class="bi bi-clock me-1"></i>{{ r.estimated_time }}
+                  {% endif %}
                 </div>
-                {% if r.autofix_available %}
-                  <button class="btn btn-success btn-sm btn-autofix"
-                          data-vuln-type="{{ r.vuln_type }}"
-                          data-vuln-id="{{ r.vuln_id }}">
-                    <i class="bi bi-lightning-fill me-1"></i>Auto-Fix
-                  </button>
-                {% endif %}
+
+                <!-- Right side time & apply -->
+                <div class="d-flex flex-row flex-sm-column align-items-center justify-content-between text-end gap-3" style="min-width:130px;">
+                  <div style="font-size:0.75rem; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">
+                    <i class="bi bi-clock me-1"></i>{{ r.estimated_time }}
+                  </div>
+                  {% if r.autofix_available %}
+                    <button class="btn-apply-fix btn-autofix"
+                            data-vuln-type="{{ r.vuln_type }}"
+                            data-vuln-id="{{ r.vuln_id }}">
+                      <i class="bi bi-lightning-fill"></i> Auto-Fix
+                    </button>
+                  {% endif %}
+                </div>
+
               </div>
             </div>
           </div>
         </div>
-      </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="card">
-    <div class="card-body text-center text-muted py-5">
-      <i class="bi bi-tools fs-2 d-block mb-2"></i>
-      No remediation data available.
-      <a href="{{ url_for('routes.scan') }}">Run a scan first.</a>
+      {% endfor %}
     </div>
-  </div>
-{% endif %}
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-tools"></i></div>
+      <h6>System Secure</h6>
+      <p class="text-muted small">No remediation recommendations found. Run a scan to analyze risks.</p>
+      <a href="{{ url_for('routes.scan') }}" class="btn btn-primary btn-sm" style="border-radius:10px; font-weight:700; padding:8px 16px; margin-top:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none;">
+        Run Scan Now
+      </a>
+    </div>
+  {% endif %}
+
+</div>
 
 <!-- Auto-Fix Confirmation Modal -->
 <div class="modal fade" id="autofixModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark border-warning">
-      <div class="modal-header border-warning">
-        <h5 class="modal-title"><i class="bi bi-lightning-fill text-warning me-2"></i>Confirm Auto-Fix</h5>
+    <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="background:#fef9c3; border-bottom:1px solid #fef08a;">
+        <h5 class="modal-title fw-bold" style="color:#854d0e; font-size:1.05rem;">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Confirm Auto-Fix
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="autofixModalBody">Loading...</div>
-      <div class="modal-footer border-warning">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-warning" id="btnConfirmFix">
-          <i class="bi bi-check2 me-1"></i>Yes, Apply Fix
+      <div class="modal-body" id="autofixModalBody" style="padding:20px; font-size:0.9rem; color:#475569; line-height:1.6;">
+        Loading...
+      </div>
+      <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #f1f5f9;">
+        <button type="button" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-weight:600;" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-warning" id="btnConfirmFix" style="border-radius:8px; font-weight:700; background:#eab308; border:none; color:#fff; padding:6px 14px;">
+          <i class="bi bi-check2 me-1"></i>Apply Fix
         </button>
       </div>
     </div>
@@ -162,13 +263,14 @@
 
 <!-- Result Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
-  <div id="fixToast" class="toast align-items-center text-white border-0" role="alert">
+  <div id="fixToast" class="toast align-items-center text-white border-0" role="alert" style="border-radius:12px; background:#1e293b;">
     <div class="d-flex">
-      <div class="toast-body" id="fixToastBody">Fix applied.</div>
+      <div class="toast-body" id="fixToastBody" style="font-weight:600; font-size:0.85rem;">Fix applied successfully.</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}

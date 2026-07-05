@@ -1,80 +1,133 @@
 {% extends "base.html" %}
-{% block title %}Audit Log — HybridSec{% endblock %}
+{% block title %}📋 Audit Log — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .audit-page { padding: 28px 32px; }
+
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 0; }
+
+  /* Audit Table */
+  .hs-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .hs-table thead tr { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+  .hs-table th { padding: 12px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+  .hs-table td { padding: 14px 16px; color: #1e293b; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .hs-table tbody tr:hover { background-color: #f8fafc; }
+
+  .badge-action-fail     { background: #fee2e2; color: #ef4444; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-action-fix      { background: #fff7ed; color: #f97316; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-action-login    { background: #dcfce7; color: #16a34a; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-action-default  { background: #f1f5f9; color: #64748b; font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+
+  .empty-state { text-align: center; padding: 56px 20px; }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0f4ff,#ede9fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #6366f1;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Audit Log</h4>
-    <p class="text-muted small mb-0">
-      All administrator actions are recorded here for security accountability.
-    </p>
-  </div>
-</div>
+<div class="audit-page">
 
-<div class="card">
-  <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-journal-text me-1"></i>Recent Actions (last 200)</span>
-    {% if entries %}
-    <button class="btn btn-sm btn-outline-danger" onclick="clearAuditLog(this)">
-      <i class="bi bi-trash3 me-1"></i>Clear All
-    </button>
-    {% endif %}
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">📋 Audit Log</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">All administrator actions are recorded here for security accountability.</p>
+    </div>
   </div>
-  <div class="card-body p-0">
-    {% if entries %}
-      <div class="table-responsive">
-        <table class="table table-dark table-hover mb-0 small">
-          <thead>
-            <tr class="text-muted">
-              <th>Timestamp</th>
-              <th>User</th>
-              <th>Action</th>
-              <th>Detail</th>
-              <th>IP</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for e in entries %}
-            <tr>
-              <td class="text-muted font-monospace" style="font-size:0.72rem; white-space:nowrap;">
-                {{ (e.timestamp or '')[:19].replace('T',' ') }}
-              </td>
-              <td>{{ e.username or '—' }}</td>
-              <td>
-                <span class="badge
-                  {% if 'FAIL' in e.action or 'ERROR' in e.action %}bg-danger
-                  {% elif 'FIX' in e.action or 'ROLLBACK' in e.action %}bg-warning text-dark
-                  {% elif 'LOGIN_OK' in e.action or '2FA_OK' in e.action %}bg-success
-                  {% else %}bg-secondary{% endif %}">
-                  {{ e.action }}
-                </span>
-              </td>
-              <td class="text-muted" style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                {{ e.detail or '' }}
-              </td>
-              <td class="font-monospace text-muted" style="font-size:0.72rem;">
-                {{ e.ip_address or '—' }}
-              </td>
-              <td>
-                {% if e.success %}
-                  <i class="bi bi-check-circle text-success"></i>
-                {% else %}
-                  <i class="bi bi-x-circle text-danger"></i>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="text-center text-muted py-5">
-        <i class="bi bi-journal fs-2 d-block mb-2"></i>
-        No audit entries yet.
-      </div>
-    {% endif %}
+
+  <div class="hs-card">
+    <div class="card-header-custom">
+      <span><i class="bi bi-journal-text"></i> Recent Actions (last 200)</span>
+      {% if entries %}
+      <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:700;" onclick="clearAuditLog(this)">
+        <i class="bi bi-trash3 me-1"></i>Clear All
+      </button>
+      {% endif %}
+    </div>
+
+    <div class="card-body-custom">
+      {% if entries %}
+        <div class="table-responsive">
+          <table class="hs-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Detail</th>
+                <th>IP Address</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in entries %}
+              <tr>
+                <td style="color:#64748b; font-family:monospace; font-size:0.75rem;">
+                  {{ (e.timestamp or '')[:19].replace('T',' ') }}
+                </td>
+                <td style="font-weight:700; color:#1e293b;">{{ e.username or '—' }}</td>
+                <td>
+                  <span class="
+                    {% if 'FAIL' in e.action or 'ERROR' in e.action %}badge-action-fail
+                    {% elif 'FIX' in e.action or 'ROLLBACK' in e.action %}badge-action-fix
+                    {% elif 'LOGIN' in e.action or '2FA' in e.action %}badge-action-login
+                    {% else %}badge-action-default{% endif %}">
+                    {{ e.action }}
+                  </span>
+                </td>
+                <td style="color:#475569; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ e.detail or '' }}">
+                  {{ e.detail or '' }}
+                </td>
+                <td style="font-family:monospace; font-size:0.75rem; color:#64748b;">
+                  {{ e.ip_address or '—' }}
+                </td>
+                <td>
+                  {% if e.success %}
+                    <i class="bi bi-check-circle-fill text-success" style="font-size:1rem;"></i>
+                  {% else %}
+                    <i class="bi bi-x-circle-fill text-danger" style="font-size:1rem;"></i>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="bi bi-journal-x"></i></div>
+          <h6>Log Clear</h6>
+          <p class="text-muted small">No audit log entries recorded yet.</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
+
 </div>
 {% endblock %}
 

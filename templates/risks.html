@@ -1,127 +1,252 @@
 {% extends "base.html" %}
-{% block title %}Risk Analysis — HybridSec{% endblock %}
+{% block title %}⚠️ Risk Analysis — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .risks-page { padding: 28px 32px; }
+  
+  .filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .filter-pill {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .filter-pill:hover { border-color: #cbd5e1; transform: translateY(-1px); }
+  
+  .filter-pill.active-all      { background: linear-gradient(135deg,#6366f1,#3b82f6); color: #fff; border-color: transparent; }
+  .filter-pill.active-critical { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+  .filter-pill.active-high     { background: #fff7ed; color: #f97316; border-color: #fed7aa; }
+  .filter-pill.active-medium   { background: #eff6ff; color: #3b82f6; border-color: #bfdbfe; }
+  .filter-pill.active-low      { background: #f0fdf4; color: #22c55e; border-color: #bbf7d0; }
+
+  .vuln-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-left: 5px solid #cbd5e1 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+    margin-bottom: 16px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+  }
+  .vuln-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.08);
+  }
+
+  .vuln-card.CRITICAL { border-left-color: #ef4444 !important; }
+  .vuln-card.HIGH     { border-left-color: #f97316 !important; }
+  .vuln-card.MEDIUM   { border-left-color: #3b82f6 !important; }
+  .vuln-card.LOW      { border-left-color: #22c55e !important; }
+
+  .badge-crit { background:#fee2e2; color:#ef4444; font-size:0.7rem; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; }
+  .badge-high { background:#fff7ed; color:#f97316; font-size:0.7rem; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; }
+  .badge-med  { background:#eff6ff; color:#3b82f6; font-size:0.7rem; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; }
+  .badge-low  { background:#f0fdf4; color:#22c55e; font-size:0.7rem; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase; }
+
+  .tag-pill {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .badge-exploit { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; }
+  .badge-no-patch { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 8px; }
+
+  /* Circular score meter */
+  .score-circle {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.25rem; line-height: 1;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  }
+  .score-circle.score-critical { background: #fee2e2; color: #ef4444; }
+  .score-circle.score-high     { background: #fff7ed; color: #f97316; }
+  .score-circle.score-medium   { background: #eff6ff; color: #3b82f6; }
+  .score-circle.score-low      { background: #f0fdf4; color: #22c55e; }
+
+  .evidence-box {
+    background: #f8fafc;
+    border-top: 1px dashed #e2e8f0;
+    padding: 10px 16px;
+    font-size: 0.78rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .empty-state {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    text-align: center;
+    padding: 48px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0f4ff,#ede9fe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #22c55e;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Risk Analysis</h4>
-    <p class="text-muted small mb-0">
-      {{ vulnerabilities | length }} vulnerabilities found
-      {% if scan %}&mdash; scanned {{ (scan.completed_at or '')[:16].replace('T',' ') }}{% endif %}
-    </p>
-  </div>
-  <div class="d-flex gap-2">
-    <a href="{{ url_for('routes.risks', priority='all') }}"
-       class="btn btn-sm {% if priority_filter == 'ALL' %}btn-cyan{% else %}btn-outline-secondary{% endif %}">
-      All
-    </a>
-    <a href="{{ url_for('routes.risks', priority='critical') }}"
-       class="btn btn-sm {% if priority_filter == 'CRITICAL' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-      Critical
-    </a>
-    <a href="{{ url_for('routes.risks', priority='high') }}"
-       class="btn btn-sm {% if priority_filter == 'HIGH' %}btn-warning text-dark{% else %}btn-outline-warning{% endif %}">
-      High
-    </a>
-    <a href="{{ url_for('routes.risks', priority='medium') }}"
-       class="btn btn-sm {% if priority_filter == 'MEDIUM' %}btn-info text-dark{% else %}btn-outline-info{% endif %}">
-      Medium
-    </a>
-    <a href="{{ url_for('routes.risks', priority='low') }}"
-       class="btn btn-sm {% if priority_filter == 'LOW' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
-      Low
-    </a>
-  </div>
-</div>
+<div class="risks-page">
 
-{% if vulnerabilities %}
-  <div class="row g-3">
-    {% for v in vulnerabilities %}
-      {% set score = v.hybrid_score or v.cvss_score or 0 %}
-      <div class="col-12">
-        <div class="card vuln-card
-          {% if v.priority == 'CRITICAL' %}border-danger
-          {% elif v.priority == 'HIGH' %}border-warning
-          {% elif v.priority == 'MEDIUM' %}border-info
-          {% else %}border-secondary{% endif %}">
-          <div class="card-body py-3">
-            <div class="d-flex justify-content-between align-items-start gap-3">
-              <div class="flex-grow-1">
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <span class="badge
-                    {% if v.priority == 'CRITICAL' %}bg-danger
-                    {% elif v.priority == 'HIGH' %}bg-warning text-dark
-                    {% elif v.priority == 'MEDIUM' %}bg-info text-dark
-                    {% else %}bg-secondary{% endif %}">
-                    {{ v.priority or '—' }}
-                  </span>
-                  <span class="fw-semibold">{{ v.title }}</span>
-                </div>
-                <div class="text-muted small mb-2">{{ v.description or '' }}</div>
-                <div class="d-flex flex-wrap gap-2">
-                  <span class="badge bg-dark border border-secondary text-muted">
-                    <i class="bi bi-tag me-1"></i>{{ v.type }}
-                  </span>
-                  <span class="badge bg-dark border border-secondary text-muted">
-                    <i class="bi bi-folder me-1"></i>{{ v.category }}
-                  </span>
-                  {% if v.exploit_exists %}
-                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger">
-                      <i class="bi bi-bug me-1"></i>Exploit available
-                    </span>
-                  {% endif %}
-                  {% if not v.patch_available %}
-                    <span class="badge bg-warning bg-opacity-25 text-warning border border-warning">
-                      <i class="bi bi-x-circle me-1"></i>No patch
-                    </span>
-                  {% endif %}
-                  {% if v.cve_id %}
-                    <span class="badge bg-dark border border-secondary text-muted">
-                      {{ v.cve_id }}
-                    </span>
-                  {% endif %}
-                </div>
-              </div>
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">⚠️ Risk Analysis</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">
+        {{ vulnerabilities | length }} security issues found
+        {% if scan %}&mdash; scanned {{ (scan.completed_at or '')[:16].replace('T',' ') }}{% endif %}
+      </p>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-pills">
+      <a href="{{ url_for('routes.risks', priority='all') }}"
+         class="filter-pill {% if priority_filter == 'ALL' %}active-all{% endif %}">
+        All
+      </a>
+      <a href="{{ url_for('routes.risks', priority='critical') }}"
+         class="filter-pill {% if priority_filter == 'CRITICAL' %}active-critical{% endif %}">
+        Critical
+      </a>
+      <a href="{{ url_for('routes.risks', priority='high') }}"
+         class="filter-pill {% if priority_filter == 'HIGH' %}active-high{% endif %}">
+        High
+      </a>
+      <a href="{{ url_for('routes.risks', priority='medium') }}"
+         class="filter-pill {% if priority_filter == 'MEDIUM' %}active-medium{% endif %}">
+        Medium
+      </a>
+      <a href="{{ url_for('routes.risks', priority='low') }}"
+         class="filter-pill {% if priority_filter == 'LOW' %}active-low{% endif %}">
+        Low
+      </a>
+    </div>
+  </div>
 
-              <!-- Score column -->
-              <div class="text-end" style="min-width:80px;">
-                <div class="score-badge
-                  {% if score >= 8.5 %}score-critical
-                  {% elif score >= 7.0 %}score-high
-                  {% elif score >= 5.0 %}score-medium
-                  {% else %}score-low{% endif %}">
-                  {{ "%.1f" | format(score) }}
+  <!-- Vuln List -->
+  {% if vulnerabilities %}
+    <div class="row g-3">
+      {% for v in vulnerabilities %}
+        {% set score = v.hybrid_score or v.cvss_score or 0 %}
+        <div class="col-12">
+          <div class="card vuln-card {{ v.priority }}">
+            <div class="card-body py-3 px-4">
+              <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap flex-sm-nowrap">
+                
+                <div class="flex-grow-1">
+                  <!-- Title and badge -->
+                  <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="{% if v.priority == 'CRITICAL' %}badge-crit{% elif v.priority == 'HIGH' %}badge-high{% elif v.priority == 'MEDIUM' %}badge-med{% else %}badge-low{% endif %}">
+                      {{ v.priority or 'LOW' }}
+                    </span>
+                    <span class="fw-bold" style="color:#0f172a; font-size:1rem;">{{ v.title }}</span>
+                  </div>
+
+                  <!-- Description -->
+                  <div style="font-size:0.85rem; color:#475569; line-height:1.6; margin-bottom:14px; max-width: 800px;">
+                    {{ v.description or 'No description provided.' }}
+                  </div>
+
+                  <!-- Tags -->
+                  <div class="d-flex flex-wrap gap-2">
+                    <span class="tag-pill">
+                      <i class="bi bi-tag"></i> {{ v.type }}
+                    </span>
+                    <span class="tag-pill">
+                      <i class="bi bi-folder"></i> {{ v.category }}
+                    </span>
+                    {% if v.exploit_exists %}
+                      <span class="badge-exploit">
+                        <i class="bi bi-bug"></i> Exploit Available
+                      </span>
+                    {% endif %}
+                    {% if not v.patch_available %}
+                      <span class="badge-no-patch">
+                        <i class="bi bi-x-circle"></i> No Patch
+                      </span>
+                    {% endif %}
+                    {% if v.cve_id %}
+                      <span class="tag-pill" style="font-family:monospace; font-weight:700;">
+                        {{ v.cve_id }}
+                      </span>
+                    {% endif %}
+                  </div>
                 </div>
-                <div class="text-muted" style="font-size:0.7rem;">Hybrid Score</div>
-                <a href="{{ url_for('routes.remediation') }}"
-                   class="btn btn-sm btn-outline-secondary mt-2 d-block">
-                  Fix <i class="bi bi-arrow-right"></i>
-                </a>
+
+                <!-- Score Column -->
+                <div class="d-flex flex-row flex-sm-column align-items-center justify-content-between text-end gap-3" style="min-width:90px;">
+                  <div class="text-center">
+                    <div class="score-circle {% if score >= 8.5 %}score-critical{% elif score >= 7.0 %}score-high{% elif score >= 5.0 %}score-medium{% else %}score-low{% endif %}">
+                      {{ "%.1f" | format(score) }}
+                    </div>
+                    <div style="font-size:0.65rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.04em; margin-top:5px;">
+                      Hybrid Score
+                    </div>
+                  </div>
+                  <a href="{{ url_for('routes.remediation') }}"
+                     class="btn btn-sm btn-outline-primary" style="border-radius:10px; font-weight:700; font-size:0.8rem; padding:6px 12px; width:100%; white-space:nowrap;">
+                    Fix <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
+
               </div>
             </div>
 
+            <!-- Evidence Section -->
             {% if v.evidence %}
-              <div class="mt-2 pt-2 border-top border-secondary">
-                <span class="text-muted small">
-                  <i class="bi bi-info-circle me-1"></i>{{ v.evidence }}
-                </span>
+              <div class="evidence-box">
+                <i class="bi bi-info-circle-fill" style="color:#6366f1;"></i>
+                <span><strong>Evidence detected:</strong> <code>{{ v.evidence }}</code></span>
               </div>
             {% endif %}
+
           </div>
         </div>
-      </div>
-    {% endfor %}
-  </div>
-{% else %}
-  <div class="card">
-    <div class="card-body text-center text-muted py-5">
-      <i class="bi bi-shield-check fs-2 d-block mb-2"></i>
-      {% if scan %}
-        No vulnerabilities match the selected filter.
-      {% else %}
-        No scan data available. <a href="{{ url_for('routes.scan') }}">Run a scan first.</a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+      <h6>All Clear!</h6>
+      <p class="text-muted small">
+        {% if scan %}
+          No vulnerabilities match the selected filter.
+        {% else %}
+          No scan data available yet.
+        {% endif %}
+      </p>
+      {% if not scan %}
+        <a href="{{ url_for('routes.scan') }}" class="btn btn-primary btn-sm" style="border-radius:10px; font-weight:700; padding:8px 16px; margin-top:10px; background:linear-gradient(135deg,#6366f1,#3b82f6); border:none;">
+          Run Scan Now
+        </a>
       {% endif %}
     </div>
-  </div>
-{% endif %}
+  {% endif %}
+
+</div>
 {% endblock %}

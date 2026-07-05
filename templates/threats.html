@@ -1,110 +1,229 @@
 {% extends "base.html" %}
-{% block title %}Live Guard — HybridSec{% endblock %}
+{% block title %}🛡️ Live Guard — HybridSec{% endblock %}
+
+{% block head %}
+<style>
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+  .live-page { padding: 28px 32px; }
+
+  .live-badge {
+    background: #dcfce7;
+    color: #16a34a;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.05em;
+  }
+  .live-badge .pulsing-dot {
+    width: 7px; height: 7px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  }
+
+  /* Summary tiles */
+  .threat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  @media(max-width:576px) { .threat-grid { grid-template-columns: 1fr; } }
+
+  .threat-summary-card {
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+  }
+  .threat-summary-card.ssh { border-top: 3px solid #ef4444; }
+  .threat-summary-card.port { border-top: 3px solid #f97316; }
+  .threat-summary-card.ddos { border-top: 3px solid #3b82f6; }
+
+  .tsc-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+  .tsc-icon.ssh { background: #fee2e2; color: #ef4444; }
+  .tsc-icon.port { background: #fff7ed; color: #f97316; }
+  .tsc-icon.ddos { background: #eff6ff; color: #3b82f6; }
+
+  .tsc-num { font-size: 1.8rem; font-weight: 800; line-height: 1; color: #0f172a; }
+  .tsc-label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+  /* Incidents card */
+  .hs-card {
+    background: #fff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .hs-card .card-header-custom {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size: 1.1rem; }
+  .hs-card .card-body-custom { padding: 0; }
+
+  .incident-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+  }
+  .incident-row:last-child { border-bottom: none; }
+  .incident-row:hover { background-color: #f8fafc; }
+
+  .severity-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .severity-dot.critical, .severity-dot.high { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+  .severity-dot.medium { background: #f97316; }
+  .severity-dot.low { background: #3b82f6; }
+
+  .inc-type { font-weight: 700; color: #1e293b; font-size: 0.88rem; }
+  .inc-meta { font-size: 0.76rem; color: #64748b; margin-top: 2px; }
+
+  .badge-sev-critical { background: #fee2e2; color: #ef4444; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-sev-high     { background: #fee2e2; color: #b91c1c; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-sev-medium   { background: #fff7ed; color: #c2410c; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+  .badge-sev-low      { background: #eff6ff; color: #2563eb; font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+
+  .empty-state { text-align: center; padding: 56px 20px; }
+  .empty-state .empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px; color: #22c55e;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h4 class="fw-bold mb-0">Live Guard</h4>
-    <p class="text-muted small mb-0">Real-time threat detection — SSH brute force, port scans, anomalies.</p>
-  </div>
-  <span id="liveIndicator" class="badge bg-success">
-    <i class="bi bi-circle-fill me-1" style="font-size:0.6rem;"></i>LIVE
-  </span>
-</div>
+<div class="live-page">
 
-<!-- Summary Badges -->
-<div class="row g-3 mb-4">
+  <!-- Title bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+    <div>
+      <h4 style="font-size:1.5rem;font-weight:800;color:#0f172a;margin:0;letter-spacing:-0.02em;">🛡️ Live Guard</h4>
+      <p style="font-size:0.8rem;color:#94a3b8;margin:3px 0 0;">Real-time threat detection — SSH brute force, port scans, anomalies.</p>
+    </div>
+    <span class="live-badge" id="liveIndicator">
+      <span class="pulsing-dot"></span> LIVE
+    </span>
+  </div>
+
+  <!-- Summary counters -->
   {% set ssh_count = incidents | selectattr('type', 'equalto', 'ssh_brute_force') | list | length %}
   {% set port_count = incidents | selectattr('type', 'equalto', 'port_scan') | list | length %}
   {% set ddos_count = incidents | selectattr('type', 'equalto', 'ddos') | list | length %}
-  <div class="col-4">
-    <div class="card text-center border-danger border-opacity-50">
-      <div class="card-body py-3">
-        <div class="fs-3 fw-bold text-danger">{{ ssh_count }}</div>
-        <div class="text-muted small">SSH Brute Force</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="card text-center border-warning border-opacity-50">
-      <div class="card-body py-3">
-        <div class="fs-3 fw-bold text-warning">{{ port_count }}</div>
-        <div class="text-muted small">Port Scans</div>
-      </div>
-    </div>
-  </div>
-  <div class="col-4">
-    <div class="card text-center border-info border-opacity-50">
-      <div class="card-body py-3">
-        <div class="fs-3 fw-bold text-info">{{ ddos_count }}</div>
-        <div class="text-muted small">DDoS Attempts</div>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- Incident Feed -->
-<div class="card">
-  <div class="card-header small fw-semibold text-muted d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-activity me-1"></i>Recent Incidents</span>
-    <div class="d-flex align-items-center gap-2">
-      <span class="text-muted">Auto-refreshes every 15s</span>
-      {% if incidents %}
-      <button class="btn btn-outline-danger btn-sm py-0" onclick="clearAllIncidents()">
-        <i class="bi bi-trash me-1"></i>Clear All
-      </button>
-      {% endif %}
+  <div class="threat-grid">
+    <div class="threat-summary-card ssh">
+      <div class="tsc-icon ssh">
+        <i class="bi bi-shield-x"></i>
+      </div>
+      <div>
+        <div class="tsc-num">{{ ssh_count }}</div>
+        <div class="tsc-label">SSH Brute Force</div>
+      </div>
+    </div>
+
+    <div class="threat-summary-card port">
+      <div class="tsc-icon port">
+        <i class="bi bi-broadcast"></i>
+      </div>
+      <div>
+        <div class="tsc-num">{{ port_count }}</div>
+        <div class="tsc-label">Port Scans</div>
+      </div>
+    </div>
+
+    <div class="threat-summary-card ddos">
+      <div class="tsc-icon ddos">
+        <i class="bi bi-lightning-charge"></i>
+      </div>
+      <div>
+        <div class="tsc-num">{{ ddos_count }}</div>
+        <div class="tsc-label">DDoS Attempts</div>
+      </div>
     </div>
   </div>
-  <div class="card-body p-0" id="threatFeed">
-    {% if incidents %}
-      <div class="list-group list-group-flush" id="incidentList">
-        {% for inc in incidents %}
-          <div class="list-group-item bg-transparent border-secondary py-2 px-3" id="inc-{{ loop.index0 }}">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="threat-dot
-                  {% if inc.severity == 'high' or inc.severity == 'critical' %}bg-danger
-                  {% elif inc.severity == 'medium' %}bg-warning
-                  {% else %}bg-info{% endif %}"></span>
+
+  <!-- Feed -->
+  <div class="hs-card">
+    <div class="card-header-custom">
+      <span><i class="bi bi-activity"></i> Recent Incidents</span>
+      <div class="d-flex align-items-center gap-3">
+        <span style="font-size:0.7rem; color:#94a3b8; font-weight:500; text-transform:none;">Refreshes every 15s</span>
+        {% if incidents %}
+        <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:700; padding:3px 10px;" onclick="clearAllIncidents()">
+          <i class="bi bi-trash me-1"></i>Clear All
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="card-body-custom" id="threatFeed">
+      {% if incidents %}
+        <div class="list-group list-group-flush" id="incidentList">
+          {% for inc in incidents %}
+            <div class="incident-row" id="inc-{{ loop.index0 }}">
+              <div class="d-flex align-items-center gap-3">
+                <span class="severity-dot {{ inc.severity }}"></span>
                 <div>
-                  <div class="fw-semibold small">{{ inc.type | replace('_', ' ') | title }}</div>
-                  <div class="text-muted" style="font-size:0.75rem;">
-                    From: {{ inc.source_ip or '—' }}
-                    {% if inc.detail %}&mdash; {{ inc.detail }}{% endif %}
+                  <div class="inc-type">{{ inc.type | replace('_', ' ') | title }}</div>
+                  <div class="inc-meta">
+                    <strong>Source:</strong> {{ inc.source_ip or '—' }}
+                    {% if inc.detail %}&nbsp;·&nbsp; {{ inc.detail }}{% endif %}
                   </div>
                 </div>
               </div>
               <div class="d-flex align-items-center gap-3">
                 <div class="text-end">
-                  <span class="badge
-                    {% if inc.severity == 'critical' %}bg-danger
-                    {% elif inc.severity == 'high' %}bg-warning text-dark
-                    {% elif inc.severity == 'medium' %}bg-info text-dark
-                    {% else %}bg-secondary{% endif %}">
+                  <span class="{% if inc.severity == 'critical' %}badge-sev-critical{% elif inc.severity == 'high' %}badge-sev-high{% elif inc.severity == 'medium' %}badge-sev-medium{% else %}badge-sev-low{% endif %}">
                     {{ inc.severity | upper }}
                   </span>
-                  <div class="text-muted mt-1" style="font-size:0.7rem;">
+                  <div style="font-size:0.68rem; color:#94a3b8; margin-top:2px;">
                     {{ (inc.timestamp or '')[:16].replace('T',' ') }}
                   </div>
                 </div>
-                <button class="btn btn-outline-secondary btn-sm py-0 px-2"
+                <button class="btn btn-sm btn-outline-secondary" style="border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; padding:0;"
                         onclick="clearOneIncident({{ loop.index0 }}, this)"
                         title="Dismiss">
-                  <i class="bi bi-x"></i>
+                  <i class="bi bi-x" style="font-size:1rem;"></i>
                 </button>
               </div>
             </div>
-          </div>
-        {% endfor %}
-      </div>
-    {% else %}
-      <div class="text-center text-muted py-5" id="noIncidents">
-        <i class="bi bi-shield-check fs-2 d-block mb-2"></i>
-        No incidents recorded. Live Guard will alert here when threats are detected.
-      </div>
-    {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" id="noIncidents">
+          <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+          <h6 class="fw-bold text-success">All Systems Guarded</h6>
+          <p class="text-muted small">No incidents recorded. Live Guard is active and monitoring traffic.</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
+
 </div>
 {% endblock %}
 
@@ -130,13 +249,13 @@ async function clearOneIncident(index, btn) {
     setTimeout(() => {
       row.remove();
       // Renumber remaining rows
-      document.querySelectorAll('#incidentList .list-group-item').forEach((el, i) => {
+      document.querySelectorAll('#incidentList .incident-row').forEach((el, i) => {
         el.id = 'inc-' + i;
         el.querySelector('button').setAttribute('onclick', `clearOneIncident(${i}, this)`);
       });
-      if (!document.querySelector('#incidentList .list-group-item')) {
+      if (!document.querySelector('#incidentList .incident-row')) {
         document.getElementById('threatFeed').innerHTML =
-          '<div class="text-center text-muted py-5"><i class="bi bi-shield-check fs-2 d-block mb-2"></i>No incidents recorded.</div>';
+          '<div class="empty-state"><div class="empty-icon"><i class="bi bi-shield-check"></i></div><h6 class=\"fw-bold text-success\">All Systems Guarded</h6><p class=\"text-muted small\">No incidents recorded.</p></div>';
       }
     }, 300);
   } else {
