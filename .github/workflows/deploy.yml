@@ -1,0 +1,91 @@
+name: 🚀 Deploy HybridSec to VPS
+
+# ── Triggers ─────────────────────────────────────────────────────
+# Runs automatically on every push to the main branch
+on:
+  push:
+    branches:
+      - main
+  # Also allows manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+# ── Jobs ─────────────────────────────────────────────────────────
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Checkout code (so we can validate files exist) ──
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Step 2: SSH into VPS and deploy ─────────────────────────
+      - name: 🚀 Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          # Timeout for the entire SSH session
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            INSTALL_DIR="/opt/hybridsec"
+            SERVICE_NAME="hybridsec"
+
+            echo "========================================"
+            echo "  HybridSec Agent — Auto Deploy"
+            echo "  Triggered by: GitHub Actions"
+            echo "  Time: $(date)"
+            echo "========================================"
+
+            # ── Pull latest code ─────────────────────
+            echo "[1/5] Pulling latest code from GitHub..."
+            cd "$INSTALL_DIR"
+            git fetch --all
+            git reset --hard origin/main
+            echo "✅ Code updated."
+
+            # ── Install / update Python dependencies ─
+            echo "[2/5] Updating Python packages..."
+            "$INSTALL_DIR/venv/bin/pip" install \
+              --quiet \
+              --prefer-binary \
+              --upgrade \
+              -r "$INSTALL_DIR/requirements.txt"
+            echo "✅ Python packages updated."
+
+            # ── Retrain ML model if train_model.py changed ─
+            echo "[3/5] Checking if ML model needs retraining..."
+            CHANGED=$(git diff HEAD@{1} HEAD --name-only 2>/dev/null || echo "")
+            if echo "$CHANGED" | grep -q "train_model.py\|requirements.txt"; then
+              echo "  → train_model.py changed — retraining ML model..."
+              cd "$INSTALL_DIR"
+              "$INSTALL_DIR/venv/bin/python3" -m modules.module3_scoring.models.train_model
+              echo "✅ ML model retrained."
+            else
+              echo "  → No ML changes detected, skipping retrain."
+            fi
+
+            # ── Reload systemd + restart service ─────
+            echo "[4/5] Restarting HybridSec service..."
+            systemctl daemon-reload
+            systemctl restart "$SERVICE_NAME"
+            sleep 4
+
+            # ── Health check ──────────────────────────
+            echo "[5/5] Running health check..."
+            if systemctl is-active --quiet "$SERVICE_NAME"; then
+              echo "✅ HybridSec is running!"
+              echo ""
+              echo "========================================"
+              echo "  ✅ DEPLOYMENT SUCCESSFUL"
+              echo "========================================"
+            else
+              echo "❌ Service failed to start!"
+              journalctl -u "$SERVICE_NAME" -n 30 --no-pager
+              exit 1
+            fi
