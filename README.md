@@ -204,10 +204,12 @@ hybridsec-agent/
 ### Option 1 — One-Command Install (Recommended)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Rangana666/hybridsec-agent/main/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/Rangana666/HybridsecAgent/main/install.sh | sudo bash
 ```
 
 This automatically installs all system dependencies, Python packages, configures the systemd service, and starts the dashboard.
+
+> **Already installed?** Running the same command again will automatically stop the old service, remove the old installation (your `.env` config is preserved), and install fresh — no manual cleanup needed.
 
 ---
 
@@ -215,8 +217,8 @@ This automatically installs all system dependencies, Python packages, configures
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/Rangana666/hybridsec-agent.git
-cd hybridsec-agent
+git clone https://github.com/Rangana666/HybridsecAgent.git
+cd HybridsecAgent
 ```
 
 **2. Create a virtual environment**
@@ -282,7 +284,7 @@ ALERT_EMAIL_TO=admin@yourdomain.com
 
 ## How to Use
 
-1. **Login** at `http://your-server:5000`
+1. **Login** at `https://your-server:5443` (or `http://your-server:5000` as fallback)
 2. **Set up your SME profile** — enter your business type, size, and data sensitivity level
 3. **Run a scan** — choose Quick (2–3 min) or Deep (includes full Lynis audit)
 4. **Review risks** — all vulnerabilities are ranked by hybrid score with full explanations

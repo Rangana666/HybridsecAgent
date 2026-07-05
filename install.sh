@@ -4,11 +4,11 @@
 #  ----------------------------------------------------------------
 #  Run this single command on any fresh Linux server:
 #
-#    curl -sSL https://raw.githubusercontent.com/Rangana666/hybridsec-agent/main/install.sh | sudo bash
+#    curl -sSL https://raw.githubusercontent.com/Rangana666/HybridsecAgent/main/install.sh | sudo bash
 #
 #  Or unattended (no prompts, for CI / automated deployments):
 #
-#    curl -sSL https://raw.githubusercontent.com/Rangana666/hybridsec-agent/main/install.sh | sudo bash -s -- --no-prompt
+#    curl -sSL https://raw.githubusercontent.com/Rangana666/HybridsecAgent/main/install.sh | sudo bash -s -- --no-prompt
 #
 #  Supports: Ubuntu 20.04 / 22.04 / 24.04 · Debian 11 / 12
 #            CentOS 8+ · RHEL 8+ · Amazon Linux 2
@@ -28,7 +28,7 @@ step()    { echo -e "\n${BOLD}────────────────�
             echo -e "${BOLD}──────────────────────────────────────${RESET}"; }
 
 # ── Configuration ────────────────────────────────────────────────
-REPO_URL="https://github.com/Rangana666/hybridsec-agent.git"
+REPO_URL="https://github.com/Rangana666/HybridsecAgent.git"
 INSTALL_DIR="/opt/hybridsec"
 SERVICE_NAME="hybridsec"
 HTTP_PORT=5000
@@ -44,15 +44,49 @@ echo ""
 echo -e "${BOLD}================================================================${RESET}"
 echo -e "${BOLD}   HybridSec Agent  v1.0.0 — Installer${RESET}"
 echo -e "${BOLD}   Linux Security Risk Analysis for Sri Lankan SMEs${RESET}"
-echo -e "${BOLD}   https://github.com/Rangana666/hybridsec-agent${RESET}"
+echo -e "${BOLD}   https://github.com/Rangana666/HybridsecAgent${RESET}"
 echo -e "${BOLD}================================================================${RESET}"
 echo ""
 
 # ── Confirm ───────────────────────────────────────────────────────
 if [[ "$NO_PROMPT" == false ]]; then
-    echo -e "  This will install HybridSec Agent to: ${BOLD}${INSTALL_DIR}${RESET}"
-    read -rp "  Continue? [Y/n] " ans
+    if [[ -d "$INSTALL_DIR" ]] || systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        echo -e "  ${YELLOW}${BOLD}Existing HybridSec installation detected at ${INSTALL_DIR}.${RESET}"
+        echo -e "  This will STOP the service, REMOVE the old installation, and install fresh."
+        read -rp "  Continue with update/reinstall? [Y/n] " ans
+    else
+        echo -e "  This will install HybridSec Agent to: ${BOLD}${INSTALL_DIR}${RESET}"
+        read -rp "  Continue? [Y/n] " ans
+    fi
     [[ "${ans,,}" == "n" ]] && { echo "Aborted."; exit 0; }
+fi
+
+# ── Remove old installation if it exists ─────────────────────────
+if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+    info "Stopping existing HybridSec service..."
+    systemctl stop "$SERVICE_NAME" || true
+    success "Service stopped."
+fi
+
+if systemctl is-enabled --quiet "$SERVICE_NAME" 2>/dev/null; then
+    info "Disabling existing HybridSec service..."
+    systemctl disable "$SERVICE_NAME" || true
+fi
+
+if [[ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]]; then
+    info "Removing old systemd service file..."
+    rm -f "/etc/systemd/system/${SERVICE_NAME}.service"
+    systemctl daemon-reload
+    success "Old service removed."
+fi
+
+if [[ -d "$INSTALL_DIR" ]]; then
+    info "Backing up existing .env (if any) to /tmp/hybridsec_env.bak ..."
+    [[ -f "$INSTALL_DIR/.env" ]] && cp "$INSTALL_DIR/.env" /tmp/hybridsec_env.bak && \
+        success ".env backed up to /tmp/hybridsec_env.bak"
+    info "Removing old installation directory: $INSTALL_DIR ..."
+    rm -rf "$INSTALL_DIR"
+    success "Old installation removed."
 fi
 
 # ────────────────────────────────────────────────────────────────
@@ -105,20 +139,21 @@ fi
 success "System dependencies ready."
 
 # ────────────────────────────────────────────────────────────────
-# STEP 2 — Clone / update the repository
+# STEP 2 — Clone repository (always fresh after cleanup above)
 # ────────────────────────────────────────────────────────────────
 step "Step 2/7 — Downloading HybridSec Agent from GitHub"
 
-if [[ -d "$INSTALL_DIR/.git" ]]; then
-    info "Repository already exists — pulling latest version..."
-    git -C "$INSTALL_DIR" pull --quiet
-    success "Repository updated."
-elif [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/run.py" ]]; then
-    info "Files already in $INSTALL_DIR — using existing copy."
-else
-    info "Cloning from $REPO_URL ..."
-    git clone --quiet --depth 1 "$REPO_URL" "$INSTALL_DIR"
-    success "Repository cloned to $INSTALL_DIR"
+info "Cloning from $REPO_URL ..."
+git clone --quiet --depth 1 "$REPO_URL" "$INSTALL_DIR"
+success "Repository cloned to $INSTALL_DIR"
+
+# Restore backed-up .env if it existed from a previous install
+if [[ -f /tmp/hybridsec_env.bak ]]; then
+    info "Restoring previous .env configuration..."
+    cp /tmp/hybridsec_env.bak "$INSTALL_DIR/.env"
+    chmod 600 "$INSTALL_DIR/.env"
+    rm -f /tmp/hybridsec_env.bak
+    success ".env restored from previous installation."
 fi
 
 # ────────────────────────────────────────────────────────────────
@@ -214,7 +249,7 @@ step "Step 7/7 — Installing systemd service"
 cat > /etc/systemd/system/${SERVICE_NAME}.service << SERVICE_EOF
 [Unit]
 Description=HybridSec Agent — Linux Security Platform v1.0.0
-Documentation=https://github.com/Rangana666/hybridsec-agent
+Documentation=https://github.com/Rangana666/HybridsecAgent
 After=network.target network-online.target
 Wants=network-online.target
 
