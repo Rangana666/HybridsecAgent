@@ -1,58 +1,605 @@
 {% extends "base.html" %}
-{% block title %}Login — HybridSec Agent{% endblock %}
+{% block title %}Sign In — HybridSec Agent{% endblock %}
+
+{% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset for login page — override dark theme ────────────── */
+  html[data-bs-theme], body {
+    background: #f0f4ff !important;
+    color: #1e293b !important;
+  }
+
+  .login-page {
+    min-height: 100vh;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 480px;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL — Hero ──────────────────────────────────────── */
+  .login-hero {
+    position: relative;
+    background: linear-gradient(135deg, #6366f1 0%, #3b82f6 45%, #06b6d4 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 56px;
+    overflow: hidden;
+  }
+
+  /* Animated floating circles */
+  .login-hero::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    top: -120px; left: -120px;
+    animation: floatBig 8s ease-in-out infinite;
+  }
+  .login-hero::after {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    bottom: -60px; right: -60px;
+    animation: floatBig 10s ease-in-out infinite reverse;
+  }
+
+  @keyframes floatBig {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%       { transform: translate(20px, 20px) scale(1.05); }
+  }
+
+  /* Mesh grid overlay */
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Hero content */
+  .hero-content { position: relative; z-index: 2; }
+
+  .hero-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 52px;
+  }
+  .hero-brand .shield-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    font-size: 1.6rem;
+  }
+  .hero-brand .brand-text { color: #fff; }
+  .hero-brand .brand-text h1 {
+    font-size: 1.3rem; font-weight: 700; margin: 0; line-height: 1;
+  }
+  .hero-brand .brand-text span {
+    font-size: 0.72rem; opacity: 0.75; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  .hero-headline {
+    color: #fff;
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 18px;
+    letter-spacing: -0.02em;
+  }
+  .hero-headline em {
+    font-style: normal;
+    background: linear-gradient(90deg, #fde68a, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    color: rgba(255,255,255,0.82);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    max-width: 420px;
+  }
+
+  /* Feature pills */
+  .feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 48px;
+  }
+  .feature-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+    transition: background 0.2s;
+  }
+  .feature-pill:hover { background: rgba(255,255,255,0.25); }
+  .feature-pill i { font-size: 0.85rem; }
+
+  /* Trust badges */
+  .trust-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+  }
+  .trust-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.85);
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .trust-badge i { font-size: 1rem; color: #86efac; }
+
+  /* ── RIGHT PANEL — Login Form ───────────────────────────────── */
+  .login-panel {
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 56px 48px;
+    position: relative;
+    box-shadow: -8px 0 40px rgba(99,102,241,0.08);
+  }
+
+  .panel-top-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ede9fe, #dbeafe);
+    color: #4f46e5;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+    width: fit-content;
+  }
+
+  .panel-title {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 6px;
+    letter-spacing: -0.025em;
+  }
+  .panel-subtitle {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 36px;
+    line-height: 1.5;
+  }
+
+  /* Form labels */
+  .hs-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+    display: block;
+    letter-spacing: 0.01em;
+  }
+
+  /* Inputs */
+  .hs-input-wrap {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .hs-input-wrap .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 1rem;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+  .hs-input {
+    width: 100%;
+    padding: 13px 14px 13px 42px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .hs-input:focus {
+    border-color: #6366f1;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+  }
+  .hs-input:focus + .input-icon,
+  .hs-input-wrap:focus-within .input-icon {
+    color: #6366f1;
+  }
+  .hs-input::placeholder { color: #cbd5e1; }
+
+  /* Password toggle */
+  .pw-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.2s;
+  }
+  .pw-toggle:hover { color: #6366f1; }
+
+  /* Sign in button */
+  .btn-signin {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #fff;
+    font-size: 0.97rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-signin::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
+  }
+  .btn-signin:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+  }
+  .btn-signin:active { transform: translateY(0); }
+
+  /* Error alert */
+  .hs-alert {
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 10px;
+    padding: 11px 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 22px;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Divider */
+  .hs-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+  }
+  .hs-divider::before, .hs-divider::after {
+    content: ''; flex: 1; height: 1px; background: #e2e8f0;
+  }
+
+  /* Info cards at bottom */
+  .info-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .info-card {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    color: #475569;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .info-card i {
+    font-size: 1rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .info-card .ic-label {
+    font-weight: 600;
+    color: #1e293b;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .panel-footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 0.73rem;
+    color: #94a3b8;
+  }
+  .panel-footer a { color: #6366f1; text-decoration: none; font-weight: 500; }
+  .panel-footer a:hover { text-decoration: underline; }
+
+  /* Floating status dot */
+  .status-dot {
+    width: 8px; height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────── */
+  @media (max-width: 860px) {
+    .login-page {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+    }
+    .login-hero {
+      padding: 36px 28px;
+      min-height: auto;
+    }
+    .hero-headline { font-size: 1.7rem; }
+    .login-panel { padding: 36px 28px; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="login-wrapper d-flex align-items-center justify-content-center vh-100">
-  <div class="login-card card shadow-lg" style="width:420px;">
-    <div class="card-body p-5">
+<div class="login-page">
 
-      <!-- Logo -->
-      <div class="text-center mb-4">
-        <i class="bi bi-shield-shaded text-cyan" style="font-size:3rem;"></i>
-        <h4 class="fw-bold mt-2 mb-0">HybridSec Agent</h4>
-        <p class="text-muted small">Linux Security Risk Analysis Platform</p>
+  <!-- ══ LEFT — Hero panel ══════════════════════════════════════ -->
+  <div class="login-hero">
+    <div class="hero-grid"></div>
+
+    <div class="hero-content">
+
+      <!-- Brand -->
+      <div class="hero-brand">
+        <div class="shield-icon">
+          <i class="bi bi-shield-shaded" style="color:#fff;"></i>
+        </div>
+        <div class="brand-text">
+          <h1>HybridSec Agent</h1>
+          <span>Linux Security Risk Platform</span>
+        </div>
       </div>
 
-      {% if error %}
-        <div class="alert alert-danger py-2 small">
-          <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-        </div>
-      {% endif %}
+      <!-- Headline -->
+      <h2 class="hero-headline">
+        Protect Your<br>
+        Business Server<br>
+        with <em>Smart Security</em>
+      </h2>
 
-      <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-        <div class="mb-3">
-          <label class="form-label small fw-semibold">Username</label>
-          <div class="input-group">
-            <span class="input-group-text bg-dark border-secondary">
-              <i class="bi bi-person text-muted"></i>
-            </span>
-            <input type="text" name="username" class="form-control bg-dark border-secondary text-white"
-                   placeholder="admin" required autofocus>
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label class="form-label small fw-semibold">Password</label>
-          <div class="input-group">
-            <span class="input-group-text bg-dark border-secondary">
-              <i class="bi bi-lock text-muted"></i>
-            </span>
-            <input type="password" name="password" class="form-control bg-dark border-secondary text-white"
-                   placeholder="••••••••••••" required>
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-cyan w-100 fw-semibold">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-        </button>
-      </form>
-
-      <p class="text-center text-muted mt-4 mb-0" style="font-size:0.75rem;">
-        HybridSec v1.0 &mdash; For authorised administrators only
+      <p class="hero-sub">
+        Designed for SME server administrators — automatically scan,
+        score, and fix Linux vulnerabilities with AI-powered hybrid
+        risk analysis. No security expertise needed.
       </p>
+
+      <!-- Feature pills -->
+      <div class="feature-pills">
+        <span class="feature-pill">
+          <i class="bi bi-cpu"></i> AI Hybrid Scoring
+        </span>
+        <span class="feature-pill">
+          <i class="bi bi-lightning-charge"></i> One-Click Auto-Fix
+        </span>
+        <span class="feature-pill">
+          <i class="bi bi-activity"></i> Live Threat Guard
+        </span>
+        <span class="feature-pill">
+          <i class="bi bi-file-earmark-pdf"></i> PDF Reports
+        </span>
+        <span class="feature-pill">
+          <i class="bi bi-bell"></i> Telegram Alerts
+        </span>
+        <span class="feature-pill">
+          <i class="bi bi-building"></i> SME Context Aware
+        </span>
+      </div>
+
+      <!-- Trust badges -->
+      <div class="trust-row">
+        <div class="trust-badge">
+          <i class="bi bi-check-circle-fill"></i>
+          Self-hosted &amp; Private
+        </div>
+        <div class="trust-badge">
+          <i class="bi bi-check-circle-fill"></i>
+          2FA Protected
+        </div>
+        <div class="trust-badge">
+          <i class="bi bi-check-circle-fill"></i>
+          Open Source
+        </div>
+      </div>
+
     </div>
   </div>
-</div>
+
+  <!-- ══ RIGHT — Login form ════════════════════════════════════ -->
+  <div class="login-panel">
+
+    <div class="panel-top-badge">
+      <span class="status-dot"></span>
+      System Online &amp; Secure
+    </div>
+
+    <h2 class="panel-title">Welcome back 👋</h2>
+    <p class="panel-subtitle">
+      Sign in to your HybridSec dashboard to<br>
+      monitor and secure your Linux server.
+    </p>
+
+    <!-- Error message -->
+    {% if error %}
+    <div class="hs-alert" role="alert">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Login form -->
+    <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off" id="loginForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <!-- Username -->
+      <div style="margin-bottom:20px;">
+        <label class="hs-label" for="username">Username</label>
+        <div class="hs-input-wrap" style="margin-bottom:0;">
+          <input
+            type="text"
+            id="username"
+            name="username"
+            class="hs-input"
+            placeholder="Enter your username"
+            required
+            autofocus
+            autocomplete="username"
+          >
+          <i class="bi bi-person input-icon"></i>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div style="margin-bottom:28px;">
+        <label class="hs-label" for="password">Password</label>
+        <div class="hs-input-wrap" style="margin-bottom:0; position:relative;">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="hs-input"
+            placeholder="Enter your password"
+            required
+            autocomplete="current-password"
+          >
+          <i class="bi bi-lock input-icon"></i>
+          <button type="button" class="pw-toggle" id="pwToggle" title="Show/hide password">
+            <i class="bi bi-eye" id="pwEyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sign in button -->
+      <button type="submit" class="btn-signin" id="signinBtn">
+        <i class="bi bi-box-arrow-in-right"></i>
+        Sign In Securely
+      </button>
+
+    </form>
+
+    <!-- Info cards -->
+    <div class="info-cards">
+      <div class="info-card">
+        <i class="bi bi-shield-lock" style="color:#6366f1;"></i>
+        <div>
+          <span class="ic-label">2FA Enabled</span>
+          You'll be prompted for your authenticator code after login.
+        </div>
+      </div>
+      <div class="info-card">
+        <i class="bi bi-incognito" style="color:#3b82f6;"></i>
+        <div>
+          <span class="ic-label">Authorised Only</span>
+          This dashboard is restricted to server administrators.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      HybridSec Agent v1.0 &mdash;
+      <a href="https://github.com/Rangana666/HybridsecAgent" target="_blank" rel="noopener">
+        GitHub
+      </a>
+      &bull; Built for SME Linux Security
+    </div>
+
+  </div><!-- /login-panel -->
+</div><!-- /login-page -->
+
+<script>
+  // Password show/hide toggle
+  const pwToggle  = document.getElementById('pwToggle');
+  const pwField   = document.getElementById('password');
+  const pwEyeIcon = document.getElementById('pwEyeIcon');
+
+  pwToggle.addEventListener('click', function () {
+    const isHidden = pwField.type === 'password';
+    pwField.type   = isHidden ? 'text' : 'password';
+    pwEyeIcon.className = isHidden ? 'bi bi-eye-slash' : 'bi bi-eye';
+  });
+
+  // Loading state on submit
+  document.getElementById('loginForm').addEventListener('submit', function () {
+    const btn = document.getElementById('signinBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Signing in…';
+    btn.disabled  = true;
+    // Re-enable after 6s as safety net
+    setTimeout(function () {
+      btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In Securely';
+      btn.disabled  = false;
+    }, 6000);
+  });
+</script>
 {% endblock %}
