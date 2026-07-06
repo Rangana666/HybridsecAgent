@@ -2,766 +2,357 @@
 {% block title %}Dashboard — HybridSec{% endblock %}
 
 {% block head %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ══ Light Dashboard Override ══════════════════════════════════ */
-html[data-bs-theme="light"], [data-bs-theme="light"] body {
-  background: #f0f4ff !important;
-  color: #1e293b !important;
-  font-family: 'Inter', sans-serif !important;
-}
+/* Clean, minimal SaaS dashboard design */
+body { background-color: #f8fafc !important; color: #334155; }
+.dashboard-wrapper { padding: 24px 32px; }
+.page-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.page-subtitle { font-size: 0.875rem; color: #64748b; margin-bottom: 24px; }
+.live-indicator { display: inline-block; width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-/* Sidebar light override */
-#sidebar {
-  background: #fff !important;
-  border-right: 1px solid #e2e8f0 !important;
-}
-#sidebar .nav-link { color: #475569 !important; border-radius: 10px; }
-#sidebar .nav-link:hover { background: #f0f4ff !important; color: #6366f1 !important; }
-#sidebar .nav-link.active { background: linear-gradient(135deg,#ede9fe,#dbeafe) !important; color: #4f46e5 !important; font-weight:600; }
-#sidebar span.fs-5 { color: #1e293b !important; }
-#sidebar .text-muted { color: #94a3b8 !important; }
-.avatar-circle { background: linear-gradient(135deg,#6366f1,#3b82f6) !important; }
-#themeToggle { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b; padding: 8px 12px; }
+.card { border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 24px; background: #fff; }
+.card-header { background-color: transparent; border-bottom: 1px solid #e2e8f0; padding: 16px 20px; font-weight: 600; color: #0f172a; display: flex; justify-content: space-between; align-items: center; }
+.card-body { padding: 20px; }
 
-/* ── Page wrapper ─────────────────────────────────────────────── */
-.dash-page { padding: 28px 32px; }
+/* Quick Actions */
+.quick-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.btn-outline-custom { background: #fff; border: 1px solid #cbd5e1; color: #475569; font-weight: 500; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; text-decoration: none; transition: all 0.2s; }
+.btn-outline-custom:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+.btn-primary-custom { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: background 0.2s; }
+.btn-primary-custom:hover { background: #1d4ed8; color: #fff; }
 
-/* ── Top bar ──────────────────────────────────────────────────── */
-.dash-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 28px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.dash-title h4 {
-  font-size: 1.5rem; font-weight: 800;
-  color: #0f172a; margin: 0; letter-spacing: -0.02em;
-}
-.dash-title p {
-  font-size: 0.8rem; color: #94a3b8; margin: 3px 0 0;
-  display: flex; align-items: center; gap: 6px;
-}
-.live-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #22c55e;
-  display: inline-block;
-  animation: blink 2s infinite;
-}
-@keyframes blink {
-  0%,100% { opacity:1; } 50% { opacity:0.3; }
-}
-.btn-scan {
-  background: linear-gradient(135deg, #6366f1, #3b82f6);
-  color: #fff; border: none;
-  padding: 11px 22px; border-radius: 12px;
-  font-weight: 700; font-size: 0.88rem;
-  font-family: 'Inter', sans-serif;
-  display: flex; align-items: center; gap: 8px;
-  cursor: pointer; text-decoration: none;
-  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
-  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
-  white-space: nowrap;
-}
-.btn-scan:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); color:#fff; opacity:0.92; }
+/* Overview Stats */
+.stat-box { display: flex; align-items: center; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; text-decoration: none; transition: transform 0.2s; }
+.stat-box:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.stat-icon { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 16px; flex-shrink: 0; }
+.stat-info h3 { font-size: 1.5rem; font-weight: 700; margin: 0; color: #0f172a; line-height: 1; }
+.stat-info p { font-size: 0.875rem; color: #64748b; margin: 4px 0 0 0; font-weight: 500; }
 
-/* ── Section label ────────────────────────────────────────────── */
-.section-label {
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: #94a3b8; margin-bottom: 12px;
-  display: flex; align-items: center; gap: 8px;
-}
-.section-label::after { content:''; flex:1; height:1px; background:#e2e8f0; }
+.text-critical { color: #dc2626; } .bg-critical-subtle { background-color: #fef2f2; }
+.text-high { color: #ea580c; } .bg-high-subtle { background-color: #fff7ed; }
+.text-medium { color: #2563eb; } .bg-medium-subtle { background-color: #eff6ff; }
+.text-low { color: #16a34a; } .bg-low-subtle { background-color: #f0fdf4; }
 
-/* ── White card base ──────────────────────────────────────────── */
-.hs-card {
-  background: #fff !important;
-  border: 1.5px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
-  transition: box-shadow 0.2s, transform 0.2s;
-  overflow: hidden;
-}
-.hs-card:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.12); transform: translateY(-1px); }
-.hs-card .card-header-custom {
-  padding: 14px 20px;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 0.8rem; font-weight: 700; color: #475569; letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-.hs-card .card-header-custom i { color: #6366f1; margin-right: 7px; font-size:1rem; }
-.hs-card .card-body-custom { padding: 20px; }
+/* Resource Progress Bars */
+.resource-label { display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; color: #475569; }
+.progress-thin { height: 8px; border-radius: 4px; background-color: #f1f5f9; margin-bottom: 16px; overflow: hidden; }
+.progress-bar-custom { height: 100%; transition: width 0.5s ease; border-radius: 4px; }
+.resource-subtext { font-size: 0.75rem; color: #94a3b8; margin-top: -10px; margin-bottom: 16px; display: block; }
 
-/* ── Stat cards ───────────────────────────────────────────────── */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 14px;
-  margin-bottom: 24px;
-}
-@media(max-width:900px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
-@media(max-width:500px) { .stat-grid { grid-template-columns: 1fr; } }
+/* Engine List */
+.engine-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.engine-item:last-child { border-bottom: none; }
+.engine-info h6 { margin: 0; font-size: 0.875rem; font-weight: 600; color: #1e293b; }
+.engine-info small { color: #64748b; font-size: 0.75rem; }
+.engine-status { display: flex; align-items: center; gap: 12px; }
+.badge-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-inactive { background: #f1f5f9; color: #475569; }
+.badge-warning { background: #fef3c7; color: #92400e; }
 
-.stat-card-new {
-  background: #fff;
-  border-radius: 16px;
-  border: 1.5px solid #e2e8f0;
-  padding: 20px 22px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.stat-card-new::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-}
-.stat-card-new:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
-
-.stat-card-new.critical::before { background: linear-gradient(90deg,#ef4444,#f97316); }
-.stat-card-new.critical .stat-icon-new { background: linear-gradient(135deg,#fef2f2,#fee2e2); color: #ef4444; }
-.stat-card-new.critical .stat-num-new { color: #ef4444; }
-
-.stat-card-new.high::before { background: linear-gradient(90deg,#f97316,#fbbf24); }
-.stat-card-new.high .stat-icon-new { background: linear-gradient(135deg,#fff7ed,#ffedd5); color: #f97316; }
-.stat-card-new.high .stat-num-new { color: #f97316; }
-
-.stat-card-new.medium::before { background: linear-gradient(90deg,#3b82f6,#06b6d4); }
-.stat-card-new.medium .stat-icon-new { background: linear-gradient(135deg,#eff6ff,#dbeafe); color: #3b82f6; }
-.stat-card-new.medium .stat-num-new { color: #3b82f6; }
-
-.stat-card-new.low::before { background: linear-gradient(90deg,#22c55e,#10b981); }
-.stat-card-new.low .stat-icon-new { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #22c55e; }
-.stat-card-new.low .stat-num-new { color: #22c55e; }
-
-.stat-icon-new {
-  width: 52px; height: 52px; border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem; flex-shrink: 0;
-}
-.stat-num-new { font-size: 2rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
-.stat-label-new { font-size: 0.78rem; color: #94a3b8; font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
-.stat-trend { font-size: 0.7rem; color: #94a3b8; margin-top: 4px; }
-
-/* ── Resource gauges (light redesign) ────────────────────────── */
-.resource-grid {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 14px;
-}
-@media(max-width:700px) { .resource-grid { grid-template-columns: repeat(2,1fr); } }
-
-.res-card {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 18px 16px;
-  text-align: center;
-  transition: box-shadow 0.2s;
-}
-.res-card:hover { box-shadow: 0 4px 14px rgba(99,102,241,0.10); }
-
-.gauge-wrap { position:relative; width:90px; height:90px; margin: 0 auto 10px; }
-.gauge-svg { width:100%; height:100%; }
-.gauge-center {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-}
-.gauge-val { font-size:1.2rem; font-weight:800; color:#0f172a; line-height:1; }
-.gauge-unit { font-size:0.58rem; color:#94a3b8; }
-.res-label { font-size:0.78rem; font-weight:700; color:#475569; }
-.res-sub { font-size:0.68rem; color:#94a3b8; margin-top:2px; }
-
-.cores-card {
-  background: linear-gradient(135deg,#ede9fe,#dbeafe);
-  border: 1.5px solid #c7d2fe;
-  border-radius: 14px;
-  padding: 18px 16px;
-  text-align: center;
-}
-.cores-num { font-size: 2.2rem; font-weight: 800; color: #4f46e5; line-height:1; }
-.cores-label { font-size: 0.75rem; font-weight: 700; color: #6366f1; text-transform:uppercase; letter-spacing:0.06em; }
-.cores-sub { font-size: 0.68rem; color: #818cf8; margin-top: 4px; }
-
-/* ── Row layout ───────────────────────────────────────────────── */
-.dash-row {
-  display: grid;
-  gap: 18px;
-  margin-bottom: 24px;
-}
-.dash-row-2 { grid-template-columns: 1fr 1fr; }
-.dash-row-3 { grid-template-columns: 3fr 2fr; }
-@media(max-width:800px) {
-  .dash-row-2, .dash-row-3 { grid-template-columns: 1fr; }
-}
-
-/* ── Scoring engine cards ─────────────────────────────────────── */
-.engine-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 13px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-.engine-row:last-child { border-bottom: none; padding-bottom: 0; }
-.engine-icon {
-  width: 40px; height: 40px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
-}
-.engine-icon.rule  { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #16a34a; }
-.engine-icon.ml    { background: linear-gradient(135deg,#eff6ff,#dbeafe); color: #2563eb; }
-.engine-icon.llm   { background: linear-gradient(135deg,#faf5ff,#ede9fe); color: #7c3aed; }
-.engine-icon.off   { background: #f8fafc; color: #cbd5e1; }
-.engine-name { font-size: 0.85rem; font-weight: 700; color: #1e293b; }
-.engine-sub  { font-size: 0.72rem; color: #94a3b8; margin-top:1px; }
-.badge-active  { background:#dcfce7; color:#16a34a; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
-.badge-warn    { background:#fef9c3; color:#ca8a04; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
-.badge-off     { background:#f1f5f9; color:#94a3b8; font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; }
-
-.form-check-input:checked { background-color: #6366f1; border-color: #6366f1; }
-
-.accuracy-pill {
-  margin-top: 14px; padding: 10px 14px;
-  border-radius: 12px; font-size: 0.8rem; font-weight: 700;
-  display: flex; align-items: center; gap: 8px; width: 100%;
-}
-.accuracy-pill.full    { background:#dcfce7; color:#15803d; }
-.accuracy-pill.partial { background:#fef9c3; color:#a16207; }
-.accuracy-pill.low     { background:#fee2e2; color:#b91c1c; }
-
-/* ── Lynis ring ───────────────────────────────────────────────── */
-.lynis-ring-wrap {
-  position: relative; width: 130px; height: 130px; margin: 0 auto 16px;
-}
-.lynis-ring-wrap svg { width:100%; height:100%; }
-.lynis-ring-center {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-}
-.lynis-score-num { font-size: 1.8rem; font-weight: 800; line-height: 1; color: #0f172a; }
-.lynis-score-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing:0.08em; margin-top:2px; }
-
-.lynis-progress-bar {
-  height: 8px; border-radius: 20px;
-  background: #f1f5f9;
-  overflow: hidden; margin-top: 12px;
-}
-.lynis-progress-fill { height: 100%; border-radius: 20px; transition: width 1s ease; }
-
-/* ── Vuln list ────────────────────────────────────────────────── */
-.vuln-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
+/* Vulnerability List */
+.vuln-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
 .vuln-item:last-child { border-bottom: none; }
-.vuln-severity {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-}
-.vuln-severity.CRITICAL { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
-.vuln-severity.HIGH     { background: #f97316; box-shadow: 0 0 6px rgba(249,115,22,0.5); }
-.vuln-severity.MEDIUM   { background: #3b82f6; }
-.vuln-severity.LOW      { background: #22c55e; }
-.vuln-title { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
-.vuln-type  { font-size: 0.72rem; color: #94a3b8; margin-top: 1px; }
-.vuln-badge {
-  margin-left: auto; flex-shrink: 0;
-  font-size: 0.68rem; font-weight: 700;
-  padding: 3px 10px; border-radius: 20px;
-}
-.vuln-badge.CRITICAL { background:#fee2e2; color:#ef4444; }
-.vuln-badge.HIGH     { background:#fff7ed; color:#f97316; }
-.vuln-badge.MEDIUM   { background:#eff6ff; color:#3b82f6; }
-.vuln-badge.LOW      { background:#f0fdf4; color:#22c55e; }
-.vuln-score { font-size: 0.78rem; font-weight: 700; color: #64748b; margin-left: 8px; flex-shrink:0; }
+.vuln-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
+.vuln-title { font-size: 0.875rem; font-weight: 500; color: #1e293b; margin: 0; }
+.vuln-meta { font-size: 0.75rem; color: #64748b; }
+.vuln-score { font-size: 0.875rem; font-weight: 600; color: #475569; margin-left: auto; }
 
-/* ── Empty state ──────────────────────────────────────────────── */
-.empty-state {
-  text-align: center; padding: 36px 20px;
+@media (max-width: 768px) {
+  .dashboard-wrapper { padding: 16px; }
 }
-.empty-state .empty-icon {
-  width: 64px; height: 64px; border-radius: 20px;
-  background: linear-gradient(135deg,#f0f4ff,#ede9fe);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.8rem; margin: 0 auto 14px;
-}
-.empty-state h6 { font-size:0.9rem; font-weight:700; color:#1e293b; margin-bottom:6px; }
-.empty-state p  { font-size:0.8rem; color:#94a3b8; margin:0; }
-.btn-run-scan {
-  display: inline-flex; align-items: center; gap: 7px;
-  background: linear-gradient(135deg,#6366f1,#3b82f6);
-  color: #fff; border: none; border-radius: 10px;
-  padding: 9px 18px; font-size:0.82rem; font-weight:700;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer; text-decoration: none; margin-top: 14px;
-  transition: opacity 0.2s, transform 0.15s;
-  box-shadow: 0 3px 10px rgba(99,102,241,0.3);
-}
-.btn-run-scan:hover { opacity:0.9; transform:translateY(-1px); color:#fff; }
-
-/* Quick actions bar */
-.quick-actions {
-  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
-}
-.qa-btn {
-  display: flex; align-items: center; gap: 8px;
-  background: #fff; border: 1.5px solid #e2e8f0;
-  border-radius: 12px; padding: 10px 16px;
-  font-size: 0.8rem; font-weight: 600; color: #475569;
-  cursor: pointer; text-decoration: none;
-  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
-}
-.qa-btn:hover { border-color: #6366f1; color: #6366f1; box-shadow: 0 2px 10px rgba(99,102,241,0.12); }
-.qa-btn i { font-size: 1rem; }
-
-/* View all link */
-.view-all-link {
-  font-size: 0.75rem; font-weight: 700; color: #6366f1;
-  text-decoration: none; display: flex; align-items: center; gap: 4px;
-}
-.view-all-link:hover { color: #4f46e5; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dash-page">
-
-  <!-- ══ TOP BAR ═══════════════════════════════════════════════ -->
-  <div class="dash-topbar">
-    <div class="dash-title">
-      <h4>🛡️ Security Dashboard</h4>
-      <p>
-        <span class="live-dot"></span>
-        Live — {{ stats.server_hostname }} &nbsp;·&nbsp; Last scan: {{ stats.scan_time }}
-      </p>
+<div class="dashboard-wrapper">
+  
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="page-title">Security Dashboard</h1>
+      <div class="page-subtitle">
+        <span class="live-indicator"></span> Live Monitoring — {{ stats.server_hostname }} &nbsp;|&nbsp; Last scan: {{ stats.scan_time }}
+      </div>
     </div>
-    <a href="{{ url_for('routes.scan') }}" class="btn-scan">
-      <i class="bi bi-search"></i> Run New Scan
+    <a href="{{ url_for('routes.scan') }}" class="btn-primary-custom">
+      <i class="bi bi-search me-2"></i> Run Scan
     </a>
   </div>
 
-  <!-- ══ QUICK ACTIONS ═════════════════════════════════════════ -->
   <div class="quick-actions">
-    <a href="{{ url_for('routes.scan') }}" class="qa-btn">
-      <i class="bi bi-lightning-charge" style="color:#6366f1;"></i> Quick Scan
-    </a>
-    <a href="{{ url_for('routes.risks') }}" class="qa-btn">
-      <i class="bi bi-exclamation-triangle" style="color:#f97316;"></i> View Risks
-    </a>
-    <a href="{{ url_for('routes.remediation') }}" class="qa-btn">
-      <i class="bi bi-tools" style="color:#3b82f6;"></i> Auto-Fix
-    </a>
-    <a href="{{ url_for('routes.threats') }}" class="qa-btn">
-      <i class="bi bi-activity" style="color:#22c55e;"></i> Live Guard
-    </a>
-    <a href="{{ url_for('routes.reports') }}" class="qa-btn">
-      <i class="bi bi-file-earmark-pdf" style="color:#ec4899;"></i> Download Report
-    </a>
+    <a href="{{ url_for('routes.scan') }}" class="btn-outline-custom"><i class="bi bi-lightning-charge me-1"></i> Quick Scan</a>
+    <a href="{{ url_for('routes.risks') }}" class="btn-outline-custom"><i class="bi bi-exclamation-triangle me-1"></i> View Risks</a>
+    <a href="{{ url_for('routes.remediation') }}" class="btn-outline-custom"><i class="bi bi-tools me-1"></i> Auto-Fix</a>
+    <a href="{{ url_for('routes.threats') }}" class="btn-outline-custom"><i class="bi bi-activity me-1"></i> Live Guard</a>
+    <a href="{{ url_for('routes.reports') }}" class="btn-outline-custom"><i class="bi bi-file-earmark-pdf me-1"></i> Download Report</a>
   </div>
 
-  <!-- ══ STAT CARDS ════════════════════════════════════════════ -->
-  <div class="section-label"><i class="bi bi-shield-exclamation" style="color:#6366f1;"></i> Security Overview</div>
-  <div class="stat-grid">
-
-    <a href="{{ url_for('routes.risks') }}?filter=CRITICAL" class="stat-card-new critical">
-      <div class="stat-icon-new">
-        <i class="bi bi-shield-x"></i>
-      </div>
-      <div>
-        <div class="stat-num-new">{{ stats.critical }}</div>
-        <div class="stat-label-new">Critical</div>
-        <div class="stat-trend">Needs immediate fix</div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('routes.risks') }}?filter=HIGH" class="stat-card-new high">
-      <div class="stat-icon-new">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-      </div>
-      <div>
-        <div class="stat-num-new">{{ stats.high }}</div>
-        <div class="stat-label-new">High</div>
-        <div class="stat-trend">Fix within 24h</div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('routes.risks') }}?filter=MEDIUM" class="stat-card-new medium">
-      <div class="stat-icon-new">
-        <i class="bi bi-info-circle-fill"></i>
-      </div>
-      <div>
-        <div class="stat-num-new">{{ stats.medium }}</div>
-        <div class="stat-label-new">Medium</div>
-        <div class="stat-trend">Fix this week</div>
-      </div>
-    </a>
-
-    <a href="{{ url_for('routes.risks') }}?filter=LOW" class="stat-card-new low">
-      <div class="stat-icon-new">
-        <i class="bi bi-shield-check"></i>
-      </div>
-      <div>
-        <div class="stat-num-new">{{ stats.low }}</div>
-        <div class="stat-label-new">Low</div>
-        <div class="stat-trend">Monitor regularly</div>
-      </div>
-    </a>
-
+  <div class="row mb-4">
+    <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+      <a href="{{ url_for('routes.risks') }}?filter=CRITICAL" class="stat-box">
+        <div class="stat-icon bg-critical-subtle text-critical"><i class="bi bi-shield-x"></i></div>
+        <div class="stat-info">
+          <h3 class="text-critical">{{ stats.critical }}</h3>
+          <p>Critical Risks</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+      <a href="{{ url_for('routes.risks') }}?filter=HIGH" class="stat-box">
+        <div class="stat-icon bg-high-subtle text-high"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="stat-info">
+          <h3 class="text-high">{{ stats.high }}</h3>
+          <p>High Risks</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-xl-3 col-sm-6 mb-3 mb-xl-0">
+      <a href="{{ url_for('routes.risks') }}?filter=MEDIUM" class="stat-box">
+        <div class="stat-icon bg-medium-subtle text-medium"><i class="bi bi-info-circle"></i></div>
+        <div class="stat-info">
+          <h3 class="text-medium">{{ stats.medium }}</h3>
+          <p>Medium Risks</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+      <a href="{{ url_for('routes.risks') }}?filter=LOW" class="stat-box">
+        <div class="stat-icon bg-low-subtle text-low"><i class="bi bi-shield-check"></i></div>
+        <div class="stat-info">
+          <h3 class="text-low">{{ stats.low }}</h3>
+          <p>Low Risks</p>
+        </div>
+      </a>
+    </div>
   </div>
 
-  <!-- ══ ROW: Server Resources + Scoring Engine ════════════════ -->
-  <div class="section-label"><i class="bi bi-cpu" style="color:#6366f1;"></i> Server Health</div>
-  <div class="dash-row dash-row-2" style="margin-bottom:24px;">
-
+  <div class="row">
     <!-- Server Resources -->
-    <div class="hs-card">
-      <div class="card-header-custom">
-        <span><i class="bi bi-server"></i> Live Server Resources</span>
-        <span id="resLastUpdate" style="font-size:0.68rem; color:#cbd5e1; font-weight:500; text-transform:none; letter-spacing:0;">Loading…</span>
-      </div>
-      <div class="card-body-custom">
-        <div class="resource-grid">
-
-          <!-- CPU -->
-          <div class="res-card">
-            <div class="gauge-wrap">
-              <svg viewBox="0 0 100 100" class="gauge-svg">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="10"/>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#6366f1"
-                        stroke-width="10" stroke-linecap="round"
-                        stroke-dasharray="0 263.9" id="gCpuArc"
-                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
-              </svg>
-              <div class="gauge-center">
-                <span class="gauge-val" id="gCpuVal">—</span>
-                <span class="gauge-unit">%</span>
-              </div>
-            </div>
-            <div class="res-label">CPU Usage</div>
-            <div class="res-sub" id="gCpuFreq">— MHz</div>
+    <div class="col-lg-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-server me-2"></i>System Resources</span>
+          <span id="resLastUpdate" class="text-muted" style="font-size: 0.75rem; font-weight: 400;">Loading...</span>
+        </div>
+        <div class="card-body">
+          <div class="resource-label">
+            <span>CPU Usage <span id="gCoreCount" class="text-muted ms-1"></span></span>
+            <span id="gCpuVal">--%</span>
           </div>
-
-          <!-- Cores -->
-          <div class="cores-card d-flex flex-column align-items-center justify-content-center">
-            <i class="bi bi-grid-3x3-gap-fill" style="font-size:1.5rem;color:#6366f1;margin-bottom:6px;"></i>
-            <div class="cores-num" id="gCoreCount">—</div>
-            <div class="cores-label">Cores</div>
-            <div class="cores-sub" id="gCpuLoad">Load: —</div>
+          <div class="progress-thin">
+            <div id="gCpuBar" class="progress-bar-custom" style="width: 0%; background-color: #2563eb;"></div>
           </div>
+          <span class="resource-subtext" id="gCpuFreq"></span>
 
-          <!-- RAM -->
-          <div class="res-card">
-            <div class="gauge-wrap">
-              <svg viewBox="0 0 100 100" class="gauge-svg">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="10"/>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#3b82f6"
-                        stroke-width="10" stroke-linecap="round"
-                        stroke-dasharray="0 263.9" id="gRamArc"
-                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
-              </svg>
-              <div class="gauge-center">
-                <span class="gauge-val" id="gRamVal">—</span>
-                <span class="gauge-unit">%</span>
-              </div>
-            </div>
-            <div class="res-label">RAM Usage</div>
-            <div class="res-sub" id="gRamSub">— / — GB</div>
+          <div class="resource-label">
+            <span>Memory (RAM)</span>
+            <span id="gRamVal">--%</span>
           </div>
-
-          <!-- Disk -->
-          <div class="res-card">
-            <div class="gauge-wrap">
-              <svg viewBox="0 0 100 100" class="gauge-svg">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" stroke-width="10"/>
-                <circle cx="50" cy="50" r="42" fill="none" stroke="#22c55e"
-                        stroke-width="10" stroke-linecap="round"
-                        stroke-dasharray="0 263.9" id="gDiskArc"
-                        style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray .7s ease"/>
-              </svg>
-              <div class="gauge-center">
-                <span class="gauge-val" id="gDiskVal">—</span>
-                <span class="gauge-unit">%</span>
-              </div>
-            </div>
-            <div class="res-label">Disk Usage</div>
-            <div class="res-sub" id="gDiskSub">— / — GB</div>
+          <div class="progress-thin">
+            <div id="gRamBar" class="progress-bar-custom" style="width: 0%; background-color: #8b5cf6;"></div>
           </div>
+          <span class="resource-subtext" id="gRamSub"></span>
 
+          <div class="resource-label">
+            <span>Disk Space</span>
+            <span id="gDiskVal">--%</span>
+          </div>
+          <div class="progress-thin">
+            <div id="gDiskBar" class="progress-bar-custom" style="width: 0%; background-color: #10b981;"></div>
+          </div>
+          <span class="resource-subtext" id="gDiskSub"></span>
         </div>
       </div>
     </div>
 
-    <!-- Scoring Engine Status -->
-    <div class="hs-card">
-      <div class="card-header-custom">
-        <span><i class="bi bi-diagram-3"></i> AI Scoring Engine</span>
-      </div>
-      <div class="card-body-custom">
-
-        <!-- Rule-based -->
-        <div class="engine-row">
-          <div class="engine-icon {{ 'rule' if model_status.rule.enabled else 'off' }}">
-            <i class="bi bi-funnel-fill"></i>
-          </div>
-          <div class="flex-grow-1">
-            <div class="engine-name">Rule-based Engine</div>
-            <div class="engine-sub">Weight 30% — {% if model_status.rule.enabled %}Always active{% else %}<span style="color:#f97316;">Disabled</span>{% endif %}</div>
-          </div>
-          <span class="{{ 'badge-active' if model_status.rule.enabled else 'badge-off' }}">
-            {{ 'Active' if model_status.rule.enabled else 'Off' }}
-          </span>
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
-                   data-engine="rule" {{ 'checked' if model_status.rule.enabled }}>
-          </div>
+    <!-- AI Engines -->
+    <div class="col-lg-6 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-cpu me-2"></i>Analysis Engines</span>
         </div>
-
-        <!-- ML -->
-        <div class="engine-row">
-          <div class="engine-icon {{ 'ml' if (model_status.ml.ok and model_status.ml.enabled) else 'off' }}">
-            <i class="bi bi-cpu"></i>
-          </div>
-          <div class="flex-grow-1">
-            <div class="engine-name">ML (Random Forest)</div>
-            <div class="engine-sub">Weight 35% —
-              {% if not model_status.ml.enabled %}<span style="color:#f97316;">Disabled</span>
-              {% elif model_status.ml.ok %}Model loaded
-              {% else %}Not trained yet{% endif %}
+        <div class="card-body" style="padding-top: 10px;">
+          
+          <div class="engine-item">
+            <div class="engine-info">
+              <h6>Rule-based Engine</h6>
+              <small>Standard security checks</small>
+            </div>
+            <div class="engine-status">
+              <span class="badge-status {{ 'badge-active' if model_status.rule.enabled else 'badge-inactive' }}">{{ 'Active' if model_status.rule.enabled else 'Inactive' }}</span>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input engine-toggle" type="checkbox" data-engine="rule" {{ 'checked' if model_status.rule.enabled }}>
+              </div>
             </div>
           </div>
-          {% if not model_status.ml.enabled %}
-            <span class="badge-off">Off</span>
-          {% elif model_status.ml.ok %}
-            <span class="badge-active">Active</span>
-          {% else %}
-            <span class="badge-warn">No model</span>
-          {% endif %}
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
-                   data-engine="ml" {{ 'checked' if model_status.ml.enabled }}>
-          </div>
-        </div>
 
-        <!-- LLM -->
-        <div class="engine-row">
-          <div class="engine-icon {{ 'llm' if (model_status.llm.ok and model_status.llm.enabled) else 'off' }}">
-            <i class="bi bi-stars"></i>
-          </div>
-          <div class="flex-grow-1">
-            <div class="engine-name">LLM ({{ model_status.llm.label.split('(')[-1].rstrip(')') | title }})</div>
-            <div class="engine-sub">Weight 35% —
-              {% if not model_status.llm.enabled %}<span style="color:#f97316;">Disabled</span>
-              {% elif model_status.llm.ok %}
-                Key saved
-                <button class="btn btn-link p-0 ms-1" style="font-size:0.72rem;color:#6366f1;vertical-align:baseline;border:none;background:none;"
-                        data-provider="{{ model_status.llm.label.split('(')[-1].rstrip(')').lower() }}"
-                        onclick="testLlmDash(this.dataset.provider,this)">· verify →</button>
-                <span id="dash-llm-result" class="fw-semibold" style="font-size:0.72rem;"></span>
+          <div class="engine-item">
+            <div class="engine-info">
+              <h6>Machine Learning Model</h6>
+              <small>Random Forest anomaly detection</small>
+            </div>
+            <div class="engine-status">
+              {% if not model_status.ml.enabled %}
+                <span class="badge-status badge-inactive">Inactive</span>
+              {% elif model_status.ml.ok %}
+                <span class="badge-status badge-active">Active</span>
               {% else %}
-                <a href="{{ url_for('routes.settings') }}#integrations" style="color:#f97316;font-size:0.72rem;">Add API key →</a>
+                <span class="badge-status badge-warning">No Model</span>
+              {% endif %}
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input engine-toggle" type="checkbox" data-engine="ml" {{ 'checked' if model_status.ml.enabled }}>
+              </div>
+            </div>
+          </div>
+
+          <div class="engine-item">
+            <div class="engine-info">
+              <h6>LLM Analysis ({{ model_status.llm.label.split('(')[-1].rstrip(')') | title }})</h6>
+              <small>Advanced contextual reasoning</small>
+              {% if model_status.llm.enabled and not model_status.llm.ok %}
+                <a href="{{ url_for('routes.settings') }}#integrations" class="d-block mt-1" style="font-size:0.75rem; color:#ea580c;">Configure API Key →</a>
               {% endif %}
             </div>
-          </div>
-          {% if not model_status.llm.enabled %}
-            <span class="badge-off" id="dash-llm-badge">Off</span>
-          {% elif model_status.llm.ok %}
-            <span class="badge-active" id="dash-llm-badge">Active</span>
-          {% else %}
-            <span class="badge-off" id="dash-llm-badge">No key</span>
-          {% endif %}
-          <div class="form-check form-switch mb-0">
-            <input class="form-check-input engine-toggle" type="checkbox" style="cursor:pointer;"
-                   data-engine="llm" {{ 'checked' if model_status.llm.enabled }}>
-          </div>
-        </div>
-
-        <!-- Accuracy summary -->
-        {% set active_count = [
-            model_status.rule.enabled,
-            model_status.ml.enabled and model_status.ml.ok,
-            model_status.llm.enabled and model_status.llm.ok
-          ] | select | list | length %}
-        {% if active_count == 3 %}
-          <div class="accuracy-pill full">
-            <i class="bi bi-check-circle-fill"></i>
-            Triple Hybrid Mode — Full Accuracy
-          </div>
-        {% elif active_count == 2 %}
-          <div class="accuracy-pill partial">
-            <i class="bi bi-exclamation-circle-fill"></i>
-            Dual Mode — Reduced Accuracy
-          </div>
-        {% else %}
-          <div class="accuracy-pill low">
-            <i class="bi bi-x-circle-fill"></i>
-            Rule-only — Limited Accuracy
-          </div>
-        {% endif %}
-
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ ROW: Lynis Score + Top Risks ══════════════════════════ -->
-  <div class="section-label"><i class="bi bi-bar-chart-fill" style="color:#6366f1;"></i> Risk Analysis</div>
-  <div class="dash-row dash-row-3">
-
-    <!-- Lynis Score -->
-    <div class="hs-card">
-      <div class="card-header-custom">
-        <span><i class="bi bi-bar-chart-line"></i> Server Hardening Score</span>
-        <a href="{{ url_for('routes.scan') }}" class="view-all-link">Run Deep Scan <i class="bi bi-arrow-right"></i></a>
-      </div>
-      <div class="card-body-custom d-flex flex-column align-items-center justify-content-center" style="min-height:200px;">
-
-        {% if stats.lynis_has_data %}
-          {% set score = stats.lynis_score | int %}
-          {% if score >= 70 %}
-            {% set score_color = "#22c55e" %}{% set score_label = "Good" %}{% set score_bg = "#dcfce7" %}{% set score_tc = "#15803d" %}
-          {% elif score >= 50 %}
-            {% set score_color = "#f59e0b" %}{% set score_label = "Fair" %}{% set score_bg = "#fef9c3" %}{% set score_tc = "#a16207" %}
-          {% else %}
-            {% set score_color = "#ef4444" %}{% set score_label = "Needs Work" %}{% set score_bg = "#fee2e2" %}{% set score_tc = "#b91c1c" %}
-          {% endif %}
-
-          <div class="lynis-ring-wrap">
-            <svg viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" stroke-width="12"/>
-              <circle cx="60" cy="60" r="50" fill="none" stroke="{{ score_color }}"
-                      stroke-width="12" stroke-linecap="round"
-                      stroke-dasharray="{{ (score / 100) * 314.16 }} 314.16"
-                      style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray 1.2s ease;"/>
-            </svg>
-            <div class="lynis-ring-center">
-              <div class="lynis-score-num" style="color:{{ score_color }};">{{ score }}</div>
-              <div class="lynis-score-label" style="color:{{ score_tc }};">/ 100</div>
+            <div class="engine-status">
+              {% if not model_status.llm.enabled %}
+                <span class="badge-status badge-inactive" id="dash-llm-badge">Inactive</span>
+              {% elif model_status.llm.ok %}
+                <span class="badge-status badge-active" id="dash-llm-badge">Active</span>
+              {% else %}
+                <span class="badge-status badge-warning" id="dash-llm-badge">Missing Key</span>
+              {% endif %}
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input engine-toggle" type="checkbox" data-engine="llm" {{ 'checked' if model_status.llm.enabled }}>
+              </div>
             </div>
           </div>
 
-          <div style="background:{{ score_bg }};color:{{ score_tc }};border-radius:20px;padding:5px 16px;font-size:0.82rem;font-weight:700;">
-            {{ score_label }}
-          </div>
-          <div class="lynis-progress-bar" style="width:80%; margin-top: 14px;">
-            <div class="lynis-progress-fill" style="width:{{ score }}%; background:{{ score_color }};"></div>
-          </div>
-          <p style="font-size:0.75rem;color:#94a3b8;margin-top:10px;text-align:center;">
-            Based on full Lynis system audit
-          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        {% else %}
-          <div class="empty-state">
-            <div class="empty-icon"><i class="bi bi-bar-chart" style="color:#6366f1;"></i></div>
-            <h6>No Hardening Data Yet</h6>
-            <p>Lynis score is collected during a Deep Scan.</p>
-            <a href="{{ url_for('routes.scan') }}" class="btn-run-scan">
-              <i class="bi bi-search"></i> Run a Deep Scan
-            </a>
-          </div>
-        {% endif %}
-
+  <div class="row">
+    <!-- Lynis Score -->
+    <div class="col-lg-5 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-shield-check me-2"></i>Hardening Score</span>
+        </div>
+        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+          {% if stats.lynis_has_data %}
+            {% set score = stats.lynis_score | int %}
+            {% if score >= 70 %}
+              {% set s_color = "#16a34a" %}{% set s_text = "Good" %}
+            {% elif score >= 50 %}
+              {% set s_color = "#ea580c" %}{% set s_text = "Fair" %}
+            {% else %}
+              {% set s_color = "#dc2626" %}{% set s_text = "Poor" %}
+            {% endif %}
+            
+            <div style="font-size: 4.5rem; font-weight: 700; color: {{ s_color }}; line-height: 1; letter-spacing: -2px;">{{ score }}<span style="font-size: 1.5rem; color: #94a3b8; letter-spacing: 0;">/100</span></div>
+            <div style="font-size: 1.25rem; font-weight: 600; color: #475569; margin-top: 8px;">{{ s_text }}</div>
+            <div class="progress-thin w-75 mt-4">
+              <div class="progress-bar-custom" style="width: {{ score }}%; background-color: {{ s_color }};"></div>
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size: 0.875rem;">Based on the latest Lynis audit</p>
+          {% else %}
+            <div class="text-muted py-4">
+              <i class="bi bi-shield-slash fs-1 mb-3 d-block"></i>
+              <p>No hardening data available.</p>
+              <a href="{{ url_for('routes.scan') }}" class="btn-outline-custom">Run Deep Scan</a>
+            </div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
     <!-- Top Risks -->
-    <div class="hs-card">
-      <div class="card-header-custom">
-        <span><i class="bi bi-exclamation-triangle"></i> Top Critical/High Risks</span>
-        <a href="{{ url_for('routes.risks') }}" class="view-all-link">View All <i class="bi bi-arrow-right"></i></a>
-      </div>
-      <div class="card-body-custom" style="padding-top:8px; padding-bottom:8px;">
-
-        {% if recent_vulns %}
-          {% for v in recent_vulns %}
-            <div class="vuln-item">
-              <div class="vuln-severity {{ v.priority }}"></div>
-              <div class="flex-grow-1">
-                <div class="vuln-title">{{ v.title }}</div>
-                <div class="vuln-type">{{ v.category or v.vuln_type or '' }}</div>
+    <div class="col-lg-7 mb-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <span><i class="bi bi-list-ul me-2"></i>Priority Risks</span>
+          <a href="{{ url_for('routes.risks') }}" style="font-size: 0.875rem; text-decoration: none; color: #2563eb;">View All</a>
+        </div>
+        <div class="card-body" style="padding: 10px 20px;">
+          {% if recent_vulns %}
+            {% for v in recent_vulns %}
+              <div class="vuln-item">
+                {% if v.priority == 'CRITICAL' %}{% set p_color = '#dc2626' %}
+                {% elif v.priority == 'HIGH' %}{% set p_color = '#ea580c' %}
+                {% elif v.priority == 'MEDIUM' %}{% set p_color = '#2563eb' %}
+                {% else %}{% set p_color = '#16a34a' %}{% endif %}
+                
+                <div class="vuln-dot" style="background-color: {{ p_color }};"></div>
+                <div>
+                  <h6 class="vuln-title">{{ v.title }}</h6>
+                  <span class="vuln-meta">{{ v.category or v.vuln_type or 'General' }}</span>
+                </div>
+                <div class="vuln-score">{{ "%.1f"|format(v.hybrid_score or v.cvss_score or 0) }}</div>
               </div>
-              <span class="vuln-badge {{ v.priority }}">{{ v.priority }}</span>
-              <span class="vuln-score">{{ "%.1f"|format(v.hybrid_score or v.cvss_score or 0) }}</span>
+            {% endfor %}
+          {% else %}
+            <div class="text-center text-muted py-5">
+              <i class="bi bi-shield-check fs-1 text-success mb-3 d-block"></i>
+              <p class="mb-0">No recent risks detected.</p>
             </div>
-          {% endfor %}
-        {% else %}
-          <div class="empty-state">
-            <div class="empty-icon"><i class="bi bi-shield-check" style="color:#22c55e;"></i></div>
-            <h6>No Scan Results Yet</h6>
-            <p>Run a scan to detect vulnerabilities on your server.</p>
-            <a href="{{ url_for('routes.scan') }}" class="btn-run-scan">
-              <i class="bi bi-search"></i> Start a Scan
-            </a>
-          </div>
-        {% endif %}
-
+          {% endif %}
+        </div>
       </div>
     </div>
-
   </div>
 
-</div><!-- /dash-page -->
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const C = 2 * Math.PI * 42;
-
-function setGauge(arcId, valId, defaultColor, pct) {
-  const arc = document.getElementById(arcId);
-  const val = document.getElementById(valId);
-  if (!arc) return;
-  const fill = Math.min(100, Math.max(0, pct));
-  arc.setAttribute('stroke-dasharray', `${(fill / 100) * C} ${C}`);
-  arc.setAttribute('stroke', pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : defaultColor);
-  if (val) val.textContent = fill.toFixed(1);
-}
-
+// Resource Fetching
 async function fetchResources() {
   try {
     const resp = await fetch('/api/system/resources', { credentials: 'include' });
     if (!resp.ok) return;
     const d = await resp.json();
     if (!d.available) {
-      document.getElementById('resLastUpdate').textContent = 'psutil not installed';
+      document.getElementById('resLastUpdate').textContent = 'Monitoring Agent Offline';
       return;
     }
-    setGauge('gCpuArc',  'gCpuVal',  '#6366f1', d.cpu_pct);
-    setGauge('gRamArc',  'gRamVal',  '#3b82f6', d.ram_pct);
-    setGauge('gDiskArc', 'gDiskVal', '#22c55e', d.disk_pct);
+    
+    const setBar = (id, valId, pct, colorThresh1, colorThresh2, defaultColor) => {
+      const bar = document.getElementById(id);
+      const val = document.getElementById(valId);
+      if(!bar || !val) return;
+      bar.style.width = pct + '%';
+      val.textContent = pct.toFixed(1) + '%';
+      if(pct >= colorThresh2) bar.style.backgroundColor = '#dc2626';
+      else if(pct >= colorThresh1) bar.style.backgroundColor = '#ea580c';
+      else bar.style.backgroundColor = defaultColor;
+    };
 
-    const el = id => document.getElementById(id);
-    if (el('gCpuFreq'))   el('gCpuFreq').textContent  = d.cpu_freq_mhz ? `${d.cpu_freq_mhz} MHz` : '';
-    if (el('gCoreCount')) el('gCoreCount').textContent = d.cpu_cores ?? '—';
-    if (el('gCpuLoad'))   el('gCpuLoad').textContent   = `Load: ${d.cpu_pct}%`;
-    if (el('gRamSub'))    el('gRamSub').textContent    = `${d.ram_used_gb} / ${d.ram_total_gb} GB`;
-    if (el('gDiskSub'))   el('gDiskSub').textContent   = `${d.disk_used_gb} / ${d.disk_total_gb} GB`;
+    setBar('gCpuBar', 'gCpuVal', d.cpu_pct, 70, 90, '#2563eb');
+    setBar('gRamBar', 'gRamVal', d.ram_pct, 80, 95, '#8b5cf6');
+    setBar('gDiskBar', 'gDiskVal', d.disk_pct, 85, 95, '#10b981');
 
-    const ts = new Date().toLocaleTimeString();
-    if (el('resLastUpdate')) el('resLastUpdate').textContent = `Updated ${ts}`;
+    if (document.getElementById('gCpuFreq')) document.getElementById('gCpuFreq').textContent = d.cpu_freq_mhz ? `${d.cpu_freq_mhz} MHz` : '';
+    if (document.getElementById('gCoreCount')) document.getElementById('gCoreCount').textContent = d.cpu_cores ? `(${d.cpu_cores} Cores)` : '';
+    if (document.getElementById('gRamSub')) document.getElementById('gRamSub').textContent = `${d.ram_used_gb} GB / ${d.ram_total_gb} GB`;
+    if (document.getElementById('gDiskSub')) document.getElementById('gDiskSub').textContent = `${d.disk_used_gb} GB / ${d.disk_total_gb} GB`;
+
+    document.getElementById('resLastUpdate').textContent = `Updated ${new Date().toLocaleTimeString()}`;
   } catch (e) {
-    const el = document.getElementById('resLastUpdate');
-    if (el) el.textContent = 'Connection error';
+    if(document.getElementById('resLastUpdate')) document.getElementById('resLastUpdate').textContent = 'Connection error';
   }
 }
 
 fetchResources();
 setInterval(fetchResources, 5000);
-setTimeout(() => location.reload(), 60000);
+setTimeout(() => location.reload(), 600000); // Reload every 10 min
 
 // Engine toggles
 document.querySelectorAll('.engine-toggle').forEach(el => {
   el.addEventListener('change', async function() {
-    const engine  = this.dataset.engine;
+    const engine = this.dataset.engine;
     const enabled = this.checked;
     this.disabled = true;
     try {
@@ -771,49 +362,18 @@ document.querySelectorAll('.engine-toggle').forEach(el => {
         body: JSON.stringify({ csrf_token: '{{ csrf_token }}', engine, enabled }),
       });
       const data = await resp.json();
-      if (data.ok) {
-        setTimeout(() => location.reload(), 300);
-      } else {
+      if (data.ok) location.reload();
+      else {
         alert('Toggle failed: ' + (data.error || 'unknown'));
         this.checked = !enabled;
-        this.disabled = false;
       }
     } catch(e) {
       alert('Request failed: ' + e.message);
       this.checked = !enabled;
+    } finally {
       this.disabled = false;
     }
   });
 });
-
-async function testLlmDash(provider, btn) {
-  const result = document.getElementById('dash-llm-result');
-  const badge  = document.getElementById('dash-llm-badge');
-  if (result) { result.textContent = '…'; result.style.color = '#94a3b8'; }
-  btn.disabled = true;
-  try {
-    const resp = await fetch('/api/integrations/test-llm', {
-      method: 'POST', credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ csrf_token: '{{ csrf_token }}', provider }),
-    });
-    const data = await resp.json();
-    if (result) {
-      result.textContent = data.ok ? '✓ Working' : ('✗ ' + (data.message || 'Error'));
-      result.style.color = data.ok ? '#22c55e' : '#ef4444';
-    }
-    if (badge && data.ok) {
-      badge.textContent = 'Verified';
-      badge.className = 'badge-active';
-    } else if (badge && !data.ok) {
-      badge.textContent = 'Key error';
-      badge.className = 'badge-warn';
-    }
-  } catch(e) {
-    if (result) { result.textContent = '✗ Failed'; result.style.color = '#ef4444'; }
-  } finally {
-    btn.disabled = false;
-  }
-}
 </script>
 {% endblock %}
