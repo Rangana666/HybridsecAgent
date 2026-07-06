@@ -52,13 +52,13 @@
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-image: url("{{ url_for('static', filename='img/login_bg.png') }}");
+    background-image: url("{{ url_for('static', filename='img/cyber_lock.jpg') }}");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     z-index: -1;
-    opacity: 0.15; /* Watermark effect */
-    mix-blend-mode: overlay; /* Blends with the blue gradient */
+    opacity: 0.25; /* Light shadow / watermark effect */
+    mix-blend-mode: screen; /* Helps dark images blend as a bright watermark */
   }
 
   /* Glowing Accent Line on the divider */
