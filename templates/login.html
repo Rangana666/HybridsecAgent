@@ -47,17 +47,18 @@
     z-index: 2;
   }
 
-  /* Tech Grid Background */
+  /* Watermark Image Background */
   .left-panel::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-size: 30px 30px;
+    background-image: url("{{ url_for('static', filename='img/login_bg.png') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     z-index: -1;
-    opacity: 0.7;
+    opacity: 0.15; /* Watermark effect */
+    mix-blend-mode: overlay; /* Blends with the blue gradient */
   }
 
   /* Glowing Accent Line on the divider */
@@ -104,34 +105,7 @@
     margin: 0;
   }
 
-  /* Server Status Indicator */
-  .server-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px 16px;
-    border-radius: 8px;
-    width: fit-content;
-    font-family: monospace;
-    font-size: 0.85rem;
-    color: #cbd5e1;
-    backdrop-filter: blur(4px);
-  }
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    background: #22c55e;
-    border-radius: 50%;
-    box-shadow: 0 0 10px #22c55e;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.2); }
-    100% { opacity: 1; transform: scale(1); }
-  }
+
 
   /* Right Panel - White Section */
   .right-panel {
@@ -333,10 +307,7 @@
         </p>
       </div>
 
-      <div class="server-status">
-        <div class="status-dot"></div>
-        SYSTEM ONLINE & SECURE
-      </div>
+
     </div>
 
     <!-- RIGHT PANEL -->
