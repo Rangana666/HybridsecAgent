@@ -5,15 +5,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Base & Reset */
-  html[data-bs-theme="light"], [data-bs-theme="light"] body, body {
-    background: #0075FF !important; /* Exact blue background from the image */
+  /* Fix for the white space: Override the <main> element's inline style */
+  main {
+    background: #eef2f6 !important; /* Soft light blue/grey background */
     display: flex;
-    justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    font-family: 'Inter', sans-serif;
+    justify-content: center;
+    padding: 0 !important;
   }
   
   .login-container {
@@ -26,120 +24,134 @@
 
   .login-card {
     background: #ffffff;
-    width: 900px;
-    height: 550px;
-    border-radius: 20px;
+    width: 950px;
+    min-height: 580px;
+    border-radius: 16px;
     display: flex;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.05);
+    border: 1px solid #e2e8f0;
   }
 
-  /* Left Panel - Blue Section */
+  /* Left Panel - Server / Tech Theme */
   .left-panel {
     width: 45%;
-    background: #006CE4; /* Base blue */
+    background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 100%);
     position: relative;
-    padding: 60px 45px;
+    padding: 60px 50px;
     color: #ffffff;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     z-index: 2;
-    overflow: hidden;
   }
 
-  /* 3D Spheres */
-  .sphere-1 {
+  /* Tech Grid Background */
+  .left-panel::before {
+    content: '';
     position: absolute;
-    width: 450px;
-    height: 450px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #0099FF, #0055CC, #003399);
-    top: -150px;
-    left: -150px;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
     z-index: -1;
+    opacity: 0.7;
   }
-  .sphere-2 {
+
+  /* Glowing Accent Line on the divider */
+  .accent-line {
     position: absolute;
-    width: 250px;
-    height: 250px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #0099FF, #0055CC, #003399);
-    bottom: 20px;
-    right: -100px;
-    z-index: -1;
+    top: 0; right: 0; bottom: 0;
+    width: 4px;
+    background: #3b82f6;
+    box-shadow: -2px 0 15px #3b82f6;
+    z-index: 5;
   }
-  .sphere-3 {
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #0099FF, #0055CC, #003399);
-    bottom: -150px;
-    left: -50px;
-    z-index: -1;
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo i {
+    font-size: 2.2rem;
+    color: #60a5fa;
+  }
+  .brand-logo span {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-family: 'Inter', sans-serif;
   }
 
   .left-content {
-    position: relative;
-    z-index: 1;
+    margin-top: 40px;
+    margin-bottom: 40px;
   }
   .left-content h1 {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     font-weight: 800;
-    margin: 0 0 5px 0;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .left-content h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 25px 0;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    margin: 0 0 15px 0;
+    line-height: 1.1;
+    color: #f8fafc;
   }
   .left-content p {
-    font-size: 0.75rem;
-    line-height: 1.8;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #94a3b8;
     margin: 0;
+  }
+
+  /* Server Status Indicator */
+  .server-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+    border-radius: 8px;
+    width: fit-content;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    backdrop-filter: blur(4px);
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #22c55e;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
   }
 
   /* Right Panel - White Section */
   .right-panel {
     width: 55%;
     background: #ffffff;
-    padding: 60px 60px;
+    padding: 60px 70px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    position: relative;
-    z-index: 2;
-  }
-
-  /* Bottom right corner sphere on the white card */
-  .sphere-4 {
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #0099FF, #0055CC, #003399);
-    bottom: -50px;
-    right: -50px;
-    z-index: -1; 
   }
 
   .right-panel h2 {
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 800;
-    color: #222;
+    color: #0f172a;
     margin: 0 0 8px 0;
-    letter-spacing: 0.5px;
   }
   .right-panel p.subtitle {
-    font-size: 0.7rem;
-    color: #888;
+    font-size: 0.9rem;
+    color: #64748b;
     margin: 0 0 35px 0;
   }
 
@@ -147,27 +159,41 @@
     background: #fef2f2;
     color: #b91c1c;
     border-radius: 8px;
-    padding: 10px 15px;
-    font-size: 0.8rem;
+    padding: 12px 15px;
+    font-size: 0.85rem;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     border: 1px solid #fecaca;
   }
 
+  /* Input Fields */
+  .input-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+  }
   .input-group {
     display: flex;
     align-items: center;
-    background: #F5F5F5;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 0 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     height: 48px;
+    transition: all 0.2s;
+  }
+  .input-group:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
   .input-group i {
-    color: #444;
+    color: #94a3b8;
     font-size: 1.1rem;
     margin-right: 12px;
   }
@@ -175,20 +201,20 @@
     border: none;
     background: transparent;
     flex: 1;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     outline: none;
-    color: #333;
+    color: #1e293b;
     font-weight: 500;
     font-family: 'Inter', sans-serif;
   }
   .input-group input::placeholder {
-    color: #999;
+    color: #94a3b8;
     font-weight: 400;
   }
   .input-group .show-btn {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: #0055CC;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3b82f6;
     cursor: pointer;
     text-transform: uppercase;
     background: none;
@@ -200,10 +226,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.75rem;
-    color: #555;
-    margin-top: 5px;
-    margin-bottom: 25px;
+    font-size: 0.85rem;
+    color: #475569;
+    margin-top: -5px;
+    margin-bottom: 30px;
   }
   .options label {
     display: flex;
@@ -213,82 +239,71 @@
     font-weight: 500;
   }
   .options input[type="checkbox"] {
-    accent-color: #0055CC;
-    width: 14px;
-    height: 14px;
+    accent-color: #3b82f6;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
   }
   
   .sign-in-btn {
     width: 100%;
     height: 48px;
-    background: #0f3460; /* Dark navy blue from the image */
+    background: #3b82f6; 
     color: #fff;
     border: none;
     border-radius: 8px;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
   }
   .sign-in-btn:hover {
-    background: #1a2a40;
+    background: #2563eb;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
   }
 
-  .or-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #999;
-    font-size: 0.7rem;
-    margin: 20px 0;
-  }
-  .or-divider::before, .or-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  .or-divider span {
-    padding: 0 10px;
-    text-transform: uppercase;
-  }
-
+  /* Info block */
   .security-info {
-    width: 100%;
-    height: 48px;
-    background: #ffffff;
-    color: #333;
-    border: 1px solid #333;
+    margin-top: 35px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: 15px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-family: 'Inter', sans-serif;
+    gap: 15px;
   }
   .security-info i {
-    color: #0055CC;
+    color: #3b82f6;
+    font-size: 1.4rem;
+    margin-top: 2px;
   }
-
-  .footer-text {
-    text-align: center;
-    font-size: 0.7rem;
-    color: #777;
-    margin-top: 25px;
+  .info-text {
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1.5;
+  }
+  .info-text strong {
+    color: #0f172a;
+    display: block;
+    margin-bottom: 3px;
+    font-size: 0.8rem;
   }
 
   @media (max-width: 768px) {
     .login-card {
       flex-direction: column;
       height: auto;
-      max-width: 400px;
+      max-width: 450px;
     }
     .left-panel {
       width: 100%;
       padding: 40px 30px;
-      min-height: 250px;
+    }
+    .accent-line {
+      top: auto; right: 0; bottom: 0; left: 0;
+      width: 100%; height: 4px;
     }
     .right-panel {
       width: 100%;
@@ -304,26 +319,30 @@
     
     <!-- LEFT PANEL -->
     <div class="left-panel">
-      <div class="sphere-1"></div>
-      <div class="sphere-2"></div>
-      <div class="sphere-3"></div>
+      <div class="accent-line"></div>
+      
+      <div class="brand-logo">
+        <i class="bi bi-shield-check"></i>
+        <span>HybridSec Agent</span>
+      </div>
       
       <div class="left-content">
-        <h1>WELCOME</h1>
-        <h2>HYBRIDSEC AGENT</h2>
+        <h1>Secure<br>Linux Server<br>Management</h1>
         <p>
-          Linux Security Risk Platform designed for SME server administrators. Automatically scan, score, and fix Linux vulnerabilities with AI-powered hybrid risk analysis. No security expertise needed.
+          AI-powered vulnerability scanning, scoring, and remediation designed specifically for SME administrators. No deep security expertise required.
         </p>
+      </div>
+
+      <div class="server-status">
+        <div class="status-dot"></div>
+        SYSTEM ONLINE & SECURE
       </div>
     </div>
 
     <!-- RIGHT PANEL -->
     <div class="right-panel">
-      <!-- Blue sphere in bottom right corner -->
-      <div class="sphere-4"></div>
-
-      <h2>Sign in</h2>
-      <p class="subtitle">Sign in to monitor and secure your Linux server.</p>
+      <h2>Sign In</h2>
+      <p class="subtitle">Access your security dashboard.</p>
 
       {% if error %}
       <div class="hs-alert" role="alert">
@@ -335,14 +354,16 @@
       <form method="POST" action="{{ url_for('auth.login') }}" autocomplete="off" id="loginForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
+        <label class="input-label" for="username">Username</label>
         <div class="input-group">
-          <i class="bi bi-person-fill"></i>
-          <input type="text" id="username" name="username" placeholder="User Name" required autofocus autocomplete="username">
+          <i class="bi bi-person"></i>
+          <input type="text" id="username" name="username" placeholder="admin" required autofocus autocomplete="username">
         </div>
 
+        <label class="input-label" for="password">Password</label>
         <div class="input-group">
-          <i class="bi bi-lock-fill"></i>
-          <input type="password" id="password" name="password" placeholder="Password" required autocomplete="current-password">
+          <i class="bi bi-lock"></i>
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
           <button type="button" class="show-btn" id="pwToggle">SHOW</button>
         </div>
 
@@ -353,19 +374,15 @@
           </label>
         </div>
 
-        <button type="submit" class="sign-in-btn" id="signinBtn">Sign in</button>
+        <button type="submit" class="sign-in-btn" id="signinBtn">Sign In</button>
       </form>
 
-      <div class="or-divider">
-        <span>Or</span>
-      </div>
-
       <div class="security-info">
-        <i class="bi bi-shield-check"></i> 2FA Enabled &amp; Authorised Only
-      </div>
-
-      <div class="footer-text">
-        Built for SME Linux Security
+        <i class="bi bi-shield-lock"></i>
+        <div class="info-text">
+          <strong>2FA Protected & Authorised Only</strong>
+          Access to this panel is restricted. You will be prompted for your authenticator code on the next step.
+        </div>
       </div>
 
     </div>
@@ -394,7 +411,7 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Signing in…';
         btn.disabled = true;
         setTimeout(function () {
-          btn.innerHTML = 'Sign in';
+          btn.innerHTML = 'Sign In';
           btn.disabled = false;
         }, 6000);
       }
