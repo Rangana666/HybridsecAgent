@@ -8,7 +8,8 @@ FIREWALL_FIXES: dict[str, dict] = {
         "vuln_type":        "firewall_disabled",
         "title":            "Enable and Configure UFW Firewall",
         "description":      "Enables UFW, sets default deny for incoming traffic, "
-                            "and allows SSH so you are not locked out.",
+                            "and allows SSH plus the HybridSec dashboard ports "
+                            "(5000/5443) so you are not locked out.",
         "autofix_available": True,
         "risk_level":       "medium",
         "config_file":      None,
@@ -22,6 +23,10 @@ FIREWALL_FIXES: dict[str, dict] = {
             # Allow SSH — detect which port is configured
             "SSH_PORT=$(sshd -T 2>/dev/null | grep '^port' | awk '{print $2}' || echo 22) "
             "&& ufw allow ${SSH_PORT}/tcp",
+            # Allow the HybridSec dashboard itself (HTTP + HTTPS) so this
+            # auto-fix can never lock you out of the tool you're using
+            "ufw allow 5000/tcp",
+            "ufw allow 5443/tcp",
             # Allow HTTP/HTTPS if a web server is running
             "systemctl is-active --quiet apache2 nginx 2>/dev/null "
             "&& ufw allow 80/tcp && ufw allow 443/tcp || true",
@@ -36,10 +41,11 @@ FIREWALL_FIXES: dict[str, dict] = {
             "2. Default deny:        sudo ufw default deny incoming",
             "3. Allow outgoing:      sudo ufw default allow outgoing",
             "4. Allow SSH (port 22): sudo ufw allow 22/tcp",
-            "5. Allow HTTP if needed:sudo ufw allow 80/tcp",
-            "6. Allow HTTPS:         sudo ufw allow 443/tcp",
-            "7. Enable firewall:     sudo ufw --force enable",
-            "8. Check status:        sudo ufw status verbose",
+            "5. Allow HybridSec dashboard: sudo ufw allow 5000/tcp && sudo ufw allow 5443/tcp",
+            "6. Allow HTTP if needed:sudo ufw allow 80/tcp",
+            "7. Allow HTTPS:         sudo ufw allow 443/tcp",
+            "8. Enable firewall:     sudo ufw --force enable",
+            "9. Check status:        sudo ufw status verbose",
         ],
         "estimated_time":  "2–3 minutes",
         "requires_root":   True,
