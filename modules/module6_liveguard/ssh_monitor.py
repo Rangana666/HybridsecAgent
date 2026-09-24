@@ -226,12 +226,19 @@ class SSHMonitor:
 # ══════════════════════════════════════════════════════════════════
 
 class IncidentLog:
-    """Thread-safe append-only log of security incidents."""
+    """Thread-safe append-only log of security incidents.
+
+    SSHMonitor, WebMonitor, PortScanMonitor and LiveGuard each create their
+    own IncidentLog() pointed at the same incidents.json. A per-instance
+    lock would not stop two of them writing at the same time, so the lock
+    is shared at the class level across every instance.
+    """
+
+    _lock = threading.Lock()
 
     def __init__(self, path: Optional[Path] = None):
         self._path = path or _INCIDENTS_FILE
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
 
     def append(self, incident: dict):
         with self._lock:
