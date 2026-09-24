@@ -77,8 +77,10 @@ def _ensure_ssl():
 
     SSL_DIR.mkdir(parents=True, exist_ok=True)
     logger.info("Generating self-signed SSL certificate…")
+    # ECDSA (prime256v1) instead of RSA 4096 — a much smaller Certificate
+    # message avoids TLS handshake fragmentation on restrictive networks.
     ret = os.system(
-        f'openssl req -x509 -newkey rsa:4096 -nodes '
+        f'openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes '
         f'-keyout "{SSL_KEY}" -out "{SSL_CERT}" '
         f'-days 3650 '
         f'-subj "/C=LK/ST=Western/L=Colombo/O=HybridSec/CN=hybridsec.local" '

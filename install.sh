@@ -225,7 +225,9 @@ step "Step 6/7 — Generating SSL certificate"
 if [[ ! -f "$INSTALL_DIR/ssl/hybridsec.crt" ]]; then
     if command -v openssl &>/dev/null; then
         SERVER_IP=$(hostname -I | awk '{print $1}')
-        openssl req -x509 -newkey rsa:4096 -nodes \
+        # ECDSA (prime256v1) instead of RSA 4096 — a much smaller Certificate
+        # message avoids TLS handshake fragmentation on restrictive networks.
+        openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes \
             -keyout "$INSTALL_DIR/ssl/hybridsec.key" \
             -out    "$INSTALL_DIR/ssl/hybridsec.crt" \
             -days 3650 \
