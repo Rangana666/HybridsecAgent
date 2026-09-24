@@ -33,12 +33,16 @@ FIREWALL_FIXES: dict[str, dict] = {
             # running on the box (web servers, panels, game/media servers,
             # proxies, etc.) so enabling UFW can never take down something
             # that was working before the fix ran.
-            "for p in $(ss -tlnp 2>/dev/null | awk 'NR>1{print $5}' "
-            "| grep -vE '^(127\\.|\\[::1\\])' | rev | cut -d: -f1 | rev | sort -un); "
+            # (matched by pattern, not column position — ss's column layout
+            # varies across versions/systems, a fixed-column awk is fragile)
+            "for p in $(ss -tlnp 2>/dev/null "
+            "| grep -oE '(^|[[:space:]])(0\\.0\\.0\\.0|\\*|\\[::\\]):[0-9]+' "
+            "| grep -oE '[0-9]+$' | sort -un); "
             "do ufw allow \"${p}\"/tcp; done",
             # Same for UDP listeners
-            "for p in $(ss -ulnp 2>/dev/null | awk 'NR>1{print $5}' "
-            "| grep -vE '^(127\\.|\\[::1\\])' | rev | cut -d: -f1 | rev | sort -un); "
+            "for p in $(ss -ulnp 2>/dev/null "
+            "| grep -oE '(^|[[:space:]])(0\\.0\\.0\\.0|\\*|\\[::\\]):[0-9]+' "
+            "| grep -oE '[0-9]+$' | sort -un); "
             "do ufw allow \"${p}\"/udp; done",
             # Enable UFW non-interactively
             "ufw --force enable",
