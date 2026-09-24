@@ -123,10 +123,13 @@ class AutoFixAgent:
         elif AUTOFIX_CREATE_BACKUP:
             # No single config file (e.g. a firewall/service fix run via
             # shell commands) — still log the fix so it shows up in
-            # "Recent Auto-Fixes" with its rollback_note instead of
-            # vanishing without a trace.
+            # "Recent Auto-Fixes" with a working Rollback button (if the
+            # template defines rollback_commands) instead of vanishing
+            # without a trace.
             log_result = self._backup.log_command_fix(
-                vuln_type, rollback_note=remediation.get("rollback_note", ""),
+                vuln_type,
+                rollback_note=remediation.get("rollback_note", ""),
+                rollback_commands=remediation.get("rollback_commands", []),
             )
             backup_id = log_result["backup_id"]
 
@@ -199,7 +202,9 @@ class AutoFixAgent:
 
     def rollback(self, backup_id: str) -> dict:
         """
-        Restore the backed-up config file (undo the last auto-fix).
+        Undo a previous auto-fix — restores the backed-up config file for
+        file-based fixes, or re-runs the template's rollback_commands for
+        command-based fixes (e.g. a firewall/service change).
 
         Returns:
             dict with success, message, error.
@@ -207,10 +212,43 @@ class AutoFixAgent:
         if not backup_id:
             return {"success": False, "message": "", "error": "No backup_id provided."}
 
-        result = self._backup.restore(backup_id)
-        if result["success"]:
-            logger.info("Rollback successful: %s", backup_id)
-        return result
+        entry = self._backup.get_backup(backup_id)
+        if not entry:
+            return {"success": False, "message": "", "error": f"Backup ID not found: {backup_id}"}
+
+        if entry.get("backup_path"):
+            result = self._backup.restore(backup_id)
+            if result["success"]:
+                logger.info("Rollback successful: %s", backup_id)
+            return result
+
+        # Command-based fix — re-run its rollback_commands
+        rollback_commands = entry.get("rollback_commands") or []
+        if not rollback_commands:
+            return {
+                "success": False,
+                "message": "",
+                "error": "No automatic rollback available. Manual steps: "
+                         + (entry.get("rollback_note") or "see fix details."),
+            }
+
+        for cmd in rollback_commands:
+            cmd_result = self._run_command(cmd)
+            if not cmd_result["success"]:
+                return {
+                    "success": False,
+                    "message": "",
+                    "error": f"Rollback command failed: {cmd}\n"
+                             f"Stderr: {cmd_result['stderr'][:300]}",
+                }
+
+        self._backup.mark_restored(backup_id)
+        logger.info("Command-based rollback successful: %s", backup_id)
+        return {
+            "success": True,
+            "message": f"Rolled back {entry.get('vuln_type')}",
+            "error": None,
+        }
 
     def list_recent_fixes(self) -> list[dict]:
         """Return a list of recent backups (=recent auto-fixes) for the UI."""

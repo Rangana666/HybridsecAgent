@@ -52,6 +52,9 @@
 
   .badge-autofix { background: #dcfce7; color: #16a34a; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
   .badge-manual  { background: #f1f5f9; color: #64748b; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  .badge-fixed   { background: #16a34a; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
+  .remed-card-fixed { opacity: 0.7; }
+  .remed-card-fixed:hover { opacity: 1; }
 
   .badge-risk-critical { background: #fee2e2; color: #ef4444; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
   .badge-risk-high     { background: #fff7ed; color: #f97316; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
@@ -136,15 +139,16 @@
               <td class="font-monospace text-muted" style="font-size:0.75rem;">{{ fix.original_path or '(no single config file — command-based fix)' }}</td>
               <td style="color:#64748b;">{{ (fix.created_at or '')[:16].replace('T',' ') }}</td>
               <td class="text-end">
-                {% if not fix.backup_path %}
+                {% if not fix.restored and (fix.backup_path or fix.rollback_commands) %}
+                  <button class="btn btn-sm btn-outline-warning btn-rollback" style="border-radius:8px; font-weight:700;"
+                          data-backup-id="{{ fix.backup_id }}"
+                          title="{{ fix.rollback_note }}">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
+                  </button>
+                {% elif not fix.restored %}
                   <span class="text-muted" style="font-size:0.75rem;" title="{{ fix.rollback_note }}">
                     <i class="bi bi-info-circle me-1"></i>Manual undo: {{ fix.rollback_note or 'see fix details' }}
                   </span>
-                {% elif not fix.restored %}
-                  <button class="btn btn-sm btn-outline-warning btn-rollback" style="border-radius:8px; font-weight:700;"
-                          data-backup-id="{{ fix.backup_id }}">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback
-                  </button>
                 {% else %}
                   <div class="d-flex align-items-center gap-2 justify-content-end">
                     <span class="badge bg-secondary" style="font-size:0.7rem; font-weight:600; padding:4px 8px; border-radius:12px;">Rolled back</span>
@@ -170,19 +174,21 @@
     <div class="row g-3">
       {% for r in remediations %}
         <div class="col-12">
-          <div class="remed-card autofix-{{ 'true' if r.autofix_available else 'false' }}">
+          <div class="remed-card autofix-{{ 'true' if r.autofix_available else 'false' }}{{ ' remed-card-fixed' if r.vuln_type in fixed_types else '' }}">
             <div style="padding: 20px;">
               <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap flex-sm-nowrap">
-                
+
                 <div class="flex-grow-1">
                   <!-- Header Badges -->
                   <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                    {% if r.autofix_available %}
+                    {% if r.vuln_type in fixed_types %}
+                      <span class="badge-fixed"><i class="bi bi-check-circle-fill"></i> Fixed</span>
+                    {% elif r.autofix_available %}
                       <span class="badge-autofix"><i class="bi bi-lightning-fill"></i> Auto-Fix</span>
                     {% else %}
                       <span class="badge-manual"><i class="bi bi-list-check"></i> Manual Only</span>
                     {% endif %}
-                    
+
                     <span class="{% if r.risk_level == 'critical' %}badge-risk-critical{% elif r.risk_level == 'high' %}badge-risk-high{% elif r.risk_level == 'medium' %}badge-risk-medium{% else %}badge-risk-low{% endif %}">
                       Risk: {{ r.risk_level | upper }}
                     </span>
@@ -214,7 +220,9 @@
                   <div style="font-size:0.75rem; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">
                     <i class="bi bi-clock me-1"></i>{{ r.estimated_time }}
                   </div>
-                  {% if r.autofix_available %}
+                  {% if r.vuln_type in fixed_types %}
+                    <span class="badge-fixed" style="padding:8px 14px;"><i class="bi bi-check-circle-fill"></i> Fixed</span>
+                  {% elif r.autofix_available %}
                     <button class="btn-apply-fix btn-autofix"
                             data-vuln-type="{{ r.vuln_type }}"
                             data-vuln-id="{{ r.vuln_id }}">

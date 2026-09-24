@@ -64,6 +64,7 @@ FIREWALL_FIXES: dict[str, dict] = {
         "estimated_time":  "2–3 minutes",
         "requires_root":   True,
         "rollback_note":   "UFW disabled and reset. Run 'sudo ufw --force reset' to undo manually.",
+        "rollback_commands": ["ufw --force reset"],
     },
 
     "firewall_default_allow": {
@@ -92,6 +93,7 @@ FIREWALL_FIXES: dict[str, dict] = {
         "estimated_time":  "< 1 minute",
         "requires_root":   True,
         "rollback_note":   "Run 'sudo ufw default allow incoming' to revert.",
+        "rollback_commands": ["ufw default allow incoming", "ufw reload"],
     },
 
     "high_failed_login_count": {

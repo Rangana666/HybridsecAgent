@@ -415,12 +415,21 @@ def remediation():
         remediations = gen.get_all_remediations(vulns, context)
 
     bm = BackupManager()
-    recent_fixes = bm.list_backups()[:10]
+    all_fixes = bm.list_backups()
+    recent_fixes = all_fixes[:10]
+
+    # Vuln types with a fix applied and not since rolled back — used to show
+    # a "Fixed" state on the card immediately, without waiting for a rescan.
+    fixed_types = {
+        f["vuln_type"] for f in all_fixes
+        if f.get("vuln_type") and not f.get("restored")
+    }
 
     return render_template(
         "remediation.html",
         remediations=remediations,
         recent_fixes=recent_fixes,
+        fixed_types=fixed_types,
         scan=scan,
     )
 

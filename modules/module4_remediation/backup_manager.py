@@ -109,12 +109,20 @@ class BackupManager:
             logger.error("Backup failed: %s", e)
             return {"success": False, "backup_id": "", "backup_path": "", "error": error}
 
-    def log_command_fix(self, vuln_type: str, rollback_note: str = "") -> dict:
+    def log_command_fix(
+        self,
+        vuln_type: str,
+        rollback_note: str = "",
+        rollback_commands: Optional[list[str]] = None,
+    ) -> dict:
         """
         Record a fix that has no single config file to back up (e.g. a
         firewall or service change made via shell commands). Stored in the
-        same index as file backups so it still appears in "Recent Auto-Fixes"
-        with its rollback_note, even though there's no file to restore.
+        same index as file backups so it still appears in "Recent Auto-Fixes".
+
+        If rollback_commands is given, the web UI's Rollback button will
+        actually re-run them (via AutoFixAgent.rollback) instead of just
+        showing rollback_note as a manual instruction.
 
         Returns the same shape as backup() (success, backup_id, error) so
         callers can treat both cases uniformly.
@@ -123,16 +131,30 @@ class BackupManager:
         backup_id = f"cmdfix_{ts}_{vuln_type}"
 
         entry = {
-            "original_path": None,
-            "backup_path":   None,
-            "created_at":    datetime.now().isoformat(timespec="seconds"),
-            "vuln_type":     vuln_type,
-            "rollback_note": rollback_note,
-            "restored":      False,
+            "original_path":      None,
+            "backup_path":        None,
+            "created_at":         datetime.now().isoformat(timespec="seconds"),
+            "vuln_type":          vuln_type,
+            "rollback_note":      rollback_note,
+            "rollback_commands":  rollback_commands or [],
+            "restored":           False,
         }
         self._write_index({**self._read_index(), backup_id: entry})
 
         return {"success": True, "backup_id": backup_id, "backup_path": "", "error": None}
+
+    def get_backup(self, backup_id: str) -> Optional[dict]:
+        """Return the raw index entry for a backup/fix, or None."""
+        entry = self._read_index().get(backup_id)
+        return {"backup_id": backup_id, **entry} if entry else None
+
+    def mark_restored(self, backup_id: str) -> None:
+        """Flag a command-based fix as rolled back (no file to restore)."""
+        index = self._read_index()
+        if backup_id in index:
+            index[backup_id]["restored"] = True
+            index[backup_id]["restored_at"] = datetime.now().isoformat(timespec="seconds")
+            self._write_index(index)
 
     def restore(self, backup_id: str) -> dict:
         """
