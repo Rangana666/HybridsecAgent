@@ -120,6 +120,15 @@ class AutoFixAgent:
             else:
                 backup_id = backup_result["backup_id"]
                 logger.info("Config backed up: %s → %s", config_file, backup_id)
+        elif AUTOFIX_CREATE_BACKUP:
+            # No single config file (e.g. a firewall/service fix run via
+            # shell commands) — still log the fix so it shows up in
+            # "Recent Auto-Fixes" with its rollback_note instead of
+            # vanishing without a trace.
+            log_result = self._backup.log_command_fix(
+                vuln_type, rollback_note=remediation.get("rollback_note", ""),
+            )
+            backup_id = log_result["backup_id"]
 
         # ── 4. Execute commands ─────────────────────────────
         commands_run: list[dict] = []

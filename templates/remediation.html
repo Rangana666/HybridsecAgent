@@ -133,10 +133,14 @@
             {% for fix in recent_fixes[:5] %}
             <tr>
               <td style="font-weight:700; color:#1e293b;">{{ fix.vuln_type }}</td>
-              <td class="font-monospace text-muted" style="font-size:0.75rem;">{{ fix.original_path }}</td>
+              <td class="font-monospace text-muted" style="font-size:0.75rem;">{{ fix.original_path or '(no single config file — command-based fix)' }}</td>
               <td style="color:#64748b;">{{ (fix.created_at or '')[:16].replace('T',' ') }}</td>
               <td class="text-end">
-                {% if not fix.restored %}
+                {% if not fix.backup_path %}
+                  <span class="text-muted" style="font-size:0.75rem;" title="{{ fix.rollback_note }}">
+                    <i class="bi bi-info-circle me-1"></i>Manual undo: {{ fix.rollback_note or 'see fix details' }}
+                  </span>
+                {% elif not fix.restored %}
                   <button class="btn btn-sm btn-outline-warning btn-rollback" style="border-radius:8px; font-weight:700;"
                           data-backup-id="{{ fix.backup_id }}">
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Rollback

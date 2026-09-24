@@ -109,6 +109,31 @@ class BackupManager:
             logger.error("Backup failed: %s", e)
             return {"success": False, "backup_id": "", "backup_path": "", "error": error}
 
+    def log_command_fix(self, vuln_type: str, rollback_note: str = "") -> dict:
+        """
+        Record a fix that has no single config file to back up (e.g. a
+        firewall or service change made via shell commands). Stored in the
+        same index as file backups so it still appears in "Recent Auto-Fixes"
+        with its rollback_note, even though there's no file to restore.
+
+        Returns the same shape as backup() (success, backup_id, error) so
+        callers can treat both cases uniformly.
+        """
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_id = f"cmdfix_{ts}_{vuln_type}"
+
+        entry = {
+            "original_path": None,
+            "backup_path":   None,
+            "created_at":    datetime.now().isoformat(timespec="seconds"),
+            "vuln_type":     vuln_type,
+            "rollback_note": rollback_note,
+            "restored":      False,
+        }
+        self._write_index({**self._read_index(), backup_id: entry})
+
+        return {"success": True, "backup_id": backup_id, "backup_path": "", "error": None}
+
     def restore(self, backup_id: str) -> dict:
         """
         Restore a file from backup (rollback).
@@ -130,6 +155,16 @@ class BackupManager:
                 "success": False,
                 "message": "",
                 "error": f"Backup ID not found: {backup_id}",
+            }
+
+        if not entry.get("backup_path"):
+            return {
+                "success": False,
+                "message": "",
+                "error": (
+                    "This fix has no config file to auto-restore — "
+                    f"undo it manually: {entry.get('rollback_note') or 'see the fix details.'}"
+                ),
             }
 
         backup_path   = Path(entry["backup_path"])
