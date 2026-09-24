@@ -257,6 +257,7 @@ class RemediationGenerator:
             "estimated_time":      template.get("estimated_time", "Unknown"),
             "requires_root":       template.get("requires_root", True),
             "rollback_note":       template.get("rollback_note", ""),
+            "rollback_commands":   template.get("rollback_commands", []),
 
             # Traceability
             "source":              source,

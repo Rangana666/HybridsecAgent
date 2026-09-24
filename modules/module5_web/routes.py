@@ -402,6 +402,7 @@ def risks():
 def remediation():
     from modules.module4_remediation.remediation_generator import RemediationGenerator
     from modules.module4_remediation.backup_manager import BackupManager
+    from modules.module4_remediation.autofix_agent import AutoFixAgent
     from modules.module2_context.context_manager import ContextManager
 
     scan = _latest_scan()
@@ -415,15 +416,25 @@ def remediation():
         remediations = gen.get_all_remediations(vulns, context)
 
     bm = BackupManager()
+    agent = AutoFixAgent()
     all_fixes = bm.list_backups()
     recent_fixes = all_fixes[:10]
+    # Entries logged before a template defined rollback_commands won't have
+    # them stored — fall back to the live template so the Rollback button
+    # still shows (and works, via the same fallback in AutoFixAgent.rollback).
+    for f in recent_fixes:
+        if not f.get("backup_path") and not f.get("rollback_commands"):
+            f["rollback_commands"] = agent._current_rollback_commands(f.get("vuln_type", ""))
 
-    # Vuln types with a fix applied and not since rolled back — used to show
-    # a "Fixed" state on the card immediately, without waiting for a rescan.
-    fixed_types = {
+    # Vuln types with a fix applied, not since rolled back, AND still
+    # verified true right now — re-checks live state (e.g. `ufw status`)
+    # so a "Fixed" badge doesn't keep showing after someone reverts the fix
+    # manually outside the app (e.g. `ufw disable` in a terminal).
+    logged_fixed_types = {
         f["vuln_type"] for f in all_fixes
         if f.get("vuln_type") and not f.get("restored")
     }
+    fixed_types = {vt for vt in logged_fixed_types if agent.is_still_fixed(vt)}
 
     return render_template(
         "remediation.html",

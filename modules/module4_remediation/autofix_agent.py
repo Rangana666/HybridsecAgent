@@ -222,8 +222,12 @@ class AutoFixAgent:
                 logger.info("Rollback successful: %s", backup_id)
             return result
 
-        # Command-based fix — re-run its rollback_commands
-        rollback_commands = entry.get("rollback_commands") or []
+        # Command-based fix — re-run its rollback_commands. Entries logged
+        # before a template defined rollback_commands won't have them
+        # stored, so fall back to the current template for that vuln_type.
+        rollback_commands = entry.get("rollback_commands") or self._current_rollback_commands(
+            entry.get("vuln_type", "")
+        )
         if not rollback_commands:
             return {
                 "success": False,
@@ -253,6 +257,29 @@ class AutoFixAgent:
     def list_recent_fixes(self) -> list[dict]:
         """Return a list of recent backups (=recent auto-fixes) for the UI."""
         return self._backup.list_backups()
+
+    def is_still_fixed(self, vuln_type: str) -> bool:
+        """
+        Re-run the fix template's verify_command right now and return
+        whether it still passes. Used so a logged fix doesn't keep showing
+        as "Fixed" in the UI after someone manually reverts it outside the
+        app (e.g. running `ufw disable` in a terminal).
+
+        If the template defines no verify_command, we can't check live
+        state, so the logged status is trusted as-is (returns True).
+        """
+        remediation = self._gen.get_remediation({"type": vuln_type})
+        verify_cmd = remediation.get("verify_command") if remediation else None
+        if not verify_cmd:
+            return True
+        result = self._verify_fix(verify_cmd, expected=remediation.get("verify_expected"))
+        return result["passed"]
+
+    def _current_rollback_commands(self, vuln_type: str) -> list[str]:
+        """Look up rollback_commands from the live template for vuln_type —
+        used as a fallback for fixes logged before a template defined them."""
+        remediation = self._gen.get_remediation({"type": vuln_type})
+        return remediation.get("rollback_commands", []) if remediation else []
 
     # ── Private Helpers ────────────────────────────────────────
 
