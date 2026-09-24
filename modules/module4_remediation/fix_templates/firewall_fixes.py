@@ -8,8 +8,10 @@ FIREWALL_FIXES: dict[str, dict] = {
         "vuln_type":        "firewall_disabled",
         "title":            "Enable and Configure UFW Firewall",
         "description":      "Enables UFW, sets default deny for incoming traffic, "
-                            "and allows SSH plus the HybridSec dashboard ports "
-                            "(5000/5443) so you are not locked out.",
+                            "and auto-allows every port currently listening on a "
+                            "public interface so no already-running service "
+                            "(SSH, the HybridSec dashboard, or anything else) "
+                            "gets locked out.",
         "autofix_available": True,
         "risk_level":       "medium",
         "config_file":      None,
@@ -20,16 +22,24 @@ FIREWALL_FIXES: dict[str, dict] = {
             # Default deny incoming, allow outgoing
             "ufw default deny incoming",
             "ufw default allow outgoing",
-            # Allow SSH — detect which port is configured
+            # Allow SSH — detect which port is configured. Done explicitly
+            # (not just relying on the scan below) so a fix never locks out
+            # the terminal session running it, even if `ss` is unavailable.
             "SSH_PORT=$(sshd -T 2>/dev/null | grep '^port' | awk '{print $2}' || echo 22) "
             "&& ufw allow ${SSH_PORT}/tcp",
-            # Allow the HybridSec dashboard itself (HTTP + HTTPS) so this
-            # auto-fix can never lock you out of the tool you're using
-            "ufw allow 5000/tcp",
-            "ufw allow 5443/tcp",
-            # Allow HTTP/HTTPS if a web server is running
-            "systemctl is-active --quiet apache2 nginx 2>/dev/null "
-            "&& ufw allow 80/tcp && ufw allow 443/tcp || true",
+            # Allow every TCP port any process is currently listening on that
+            # isn't loopback-only (127.0.0.1/[::1]) — this covers the
+            # HybridSec dashboard (5000/5443) plus any other service already
+            # running on the box (web servers, panels, game/media servers,
+            # proxies, etc.) so enabling UFW can never take down something
+            # that was working before the fix ran.
+            "for p in $(ss -tlnp 2>/dev/null | awk 'NR>1{print $5}' "
+            "| grep -vE '^(127\\.|\\[::1\\])' | rev | cut -d: -f1 | rev | sort -un); "
+            "do ufw allow \"${p}\"/tcp; done",
+            # Same for UDP listeners
+            "for p in $(ss -ulnp 2>/dev/null | awk 'NR>1{print $5}' "
+            "| grep -vE '^(127\\.|\\[::1\\])' | rev | cut -d: -f1 | rev | sort -un); "
+            "do ufw allow \"${p}\"/udp; done",
             # Enable UFW non-interactively
             "ufw --force enable",
         ],
@@ -37,15 +47,15 @@ FIREWALL_FIXES: dict[str, dict] = {
         "verify_expected":  "Status: active",
         "manual_steps": [
             "⚠️  IMPORTANT: Make sure SSH port is allowed BEFORE enabling firewall!",
-            "1. Reset UFW:           sudo ufw --force reset",
-            "2. Default deny:        sudo ufw default deny incoming",
-            "3. Allow outgoing:      sudo ufw default allow outgoing",
-            "4. Allow SSH (port 22): sudo ufw allow 22/tcp",
-            "5. Allow HybridSec dashboard: sudo ufw allow 5000/tcp && sudo ufw allow 5443/tcp",
-            "6. Allow HTTP if needed:sudo ufw allow 80/tcp",
-            "7. Allow HTTPS:         sudo ufw allow 443/tcp",
-            "8. Enable firewall:     sudo ufw --force enable",
-            "9. Check status:        sudo ufw status verbose",
+            "1. Reset UFW:            sudo ufw --force reset",
+            "2. Default deny:         sudo ufw default deny incoming",
+            "3. Allow outgoing:       sudo ufw default allow outgoing",
+            "4. Allow SSH (port 22):  sudo ufw allow 22/tcp",
+            "5. List what's currently listening: sudo ss -tulnp | grep LISTEN",
+            "6. Allow every public (non-127.0.0.1/::1) port shown, e.g.: "
+            "sudo ufw allow 5443/tcp",
+            "7. Enable firewall:      sudo ufw --force enable",
+            "8. Check status:         sudo ufw status verbose",
         ],
         "estimated_time":  "2–3 minutes",
         "requires_root":   True,
