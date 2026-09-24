@@ -25,7 +25,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, g, send_file, abort
+from flask import Blueprint, render_template, redirect, url_for, request, flash, g, send_file, abort, make_response
 
 logger = logging.getLogger(__name__)
 
@@ -319,11 +319,15 @@ def scan():
     finally:
         db.close()
 
-    return render_template(
+    resp = make_response(render_template(
         "scan.html",
         running_scan_id=running_scan_id,
         history=history,
-    )
+    ))
+    # Prevent the browser from serving a stale bfcache snapshot (taken before
+    # the scan ran) when the user navigates back from /risks after a scan.
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @routes_bp.route("/profile", methods=["GET", "POST"])

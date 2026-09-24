@@ -207,6 +207,7 @@ def main():
         port=port,
         debug=debug,
         use_reloader=False,
+        threaded=True,
         ssl_context=ssl_context,
     )
 
