@@ -142,7 +142,9 @@ def _run_scan_background(scan_id: str, scan_type: str, target: str):
         from modules.module3_scoring.hybrid_engine import HybridEngine
         from modules.module2_context.context_manager import ContextManager
 
-        scanner = Scanner(target=target, enrich_nvd=False)
+        # NVD enrichment only for Deep Scan — it adds a rate-limited API call
+        # per finding, which would blow past Quick Scan's ~30s target.
+        scanner = Scanner(target=target, enrich_nvd=(scan_type == "deep"))
         if scan_type == "deep":
             raw = scanner.run_deep_scan()
         else:
