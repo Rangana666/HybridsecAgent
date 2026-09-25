@@ -428,6 +428,19 @@ def threats_recent():
     return jsonify([])
 
 
+@api_bp.route("/threats/blocked", methods=["GET"])
+@login_required
+def threats_blocked():
+    """Return currently blocked IPs, for the Live Guard page's live poll."""
+    from modules.module6_liveguard.ip_blocker import IPBlocker
+    blocked = sorted(
+        IPBlocker().list_blocked(),
+        key=lambda b: b.get("blocked_at", ""),
+        reverse=True,
+    )
+    return jsonify(blocked)
+
+
 @api_bp.route("/threats/status", methods=["GET"])
 @login_required
 def threats_status():

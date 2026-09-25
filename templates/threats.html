@@ -141,7 +141,7 @@
         <i class="bi bi-shield-x"></i>
       </div>
       <div>
-        <div class="tsc-num">{{ ssh_count }}</div>
+        <div class="tsc-num" id="sshCount">{{ ssh_count }}</div>
         <div class="tsc-label">SSH Brute Force</div>
       </div>
     </div>
@@ -151,7 +151,7 @@
         <i class="bi bi-broadcast"></i>
       </div>
       <div>
-        <div class="tsc-num">{{ port_count }}</div>
+        <div class="tsc-num" id="portCount">{{ port_count }}</div>
         <div class="tsc-label">Port Scans</div>
       </div>
     </div>
@@ -161,7 +161,7 @@
         <i class="bi bi-lightning-charge"></i>
       </div>
       <div>
-        <div class="tsc-num">{{ ddos_count }}</div>
+        <div class="tsc-num" id="ddosCount">{{ ddos_count }}</div>
         <div class="tsc-label">DDoS Attempts</div>
       </div>
     </div>
@@ -214,12 +214,10 @@
     <div class="card-header-custom">
       <span><i class="bi bi-activity"></i> Recent Incidents</span>
       <div class="d-flex align-items-center gap-3">
-        <span style="font-size:0.7rem; color:#94a3b8; font-weight:500; text-transform:none;">Refreshes every 15s</span>
-        {% if incidents %}
-        <button class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:700; padding:3px 10px;" onclick="clearAllIncidents()">
+        <span style="font-size:0.7rem; color:#94a3b8; font-weight:500; text-transform:none;">Refreshes every 5s</span>
+        <button id="clearAllBtn" class="btn btn-sm btn-outline-danger" style="border-radius:8px; font-weight:700; padding:3px 10px;{{ '' if incidents else ' display:none;' }}" onclick="clearAllIncidents()">
           <i class="bi bi-trash me-1"></i>Clear All
         </button>
-        {% endif %}
       </div>
     </div>
     
@@ -270,97 +268,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
 <script src="{{ url_for('static', filename='js/threats.js') }}"></script>
-<script>
-const CSRF = document.querySelector('input[name="csrf_token"]')?.value
-           || "{{ csrf_token }}";
-
-async function clearOneIncident(index, btn) {
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-  const res = await fetch('/api/threats/incidents/clear-one', {
-    method: 'POST', credentials: 'include',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({csrf_token: CSRF, index: index})
-  });
-  const data = await res.json();
-  if (data.ok) {
-    const row = document.getElementById('inc-' + index);
-    row.style.transition = 'opacity 0.3s';
-    row.style.opacity = '0';
-    setTimeout(() => {
-      row.remove();
-      // Renumber remaining rows
-      document.querySelectorAll('#incidentList .incident-row').forEach((el, i) => {
-        el.id = 'inc-' + i;
-        el.querySelector('button').setAttribute('onclick', `clearOneIncident(${i}, this)`);
-      });
-      if (!document.querySelector('#incidentList .incident-row')) {
-        document.getElementById('threatFeed').innerHTML =
-          '<div class="empty-state"><div class="empty-icon"><i class="bi bi-shield-check"></i></div><h6 class=\"fw-bold text-success\">All Systems Guarded</h6><p class=\"text-muted small\">No incidents recorded.</p></div>';
-      }
-    }, 300);
-  } else {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-x"></i>';
-    alert('Error: ' + (data.error || 'Failed to clear'));
-  }
-}
-
-document.querySelectorAll('.btn-unblock-ip').forEach(btn => {
-  btn.addEventListener('click', () => handleUnblockIp(btn));
-});
-
-async function handleUnblockIp(btn) {
-  const ip = btn.dataset.ip;
-  if (!confirm('Unblock ' + ip + '? Traffic from this IP will be allowed again.')) return;
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-  try {
-    const res = await fetch('/api/threats/unblock', {
-      method: 'POST', credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({csrf_token: CSRF, ip: ip})
-    });
-    const data = await res.json();
-    if (data.success) {
-      const row = document.getElementById('blocked-' + ip);
-      row.style.transition = 'opacity 0.3s';
-      row.style.opacity = '0';
-      setTimeout(() => {
-        row.remove();
-        if (!document.querySelector('#blockedIpList .incident-row')) {
-          document.getElementById('blockedIpFeed').innerHTML =
-            '<div class="empty-state"><div class="empty-icon"><i class="bi bi-shield-check"></i></div><h6 class="fw-bold text-success">No IPs Currently Blocked</h6><p class="text-muted small">Blocked attacker IPs will appear here.</p></div>';
-        }
-      }, 300);
-    } else {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-unlock me-1"></i>Unblock';
-      alert('Error: ' + (data.error || 'Failed to unblock'));
-    }
-  } catch (err) {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-unlock me-1"></i>Unblock';
-    alert('Request failed: ' + err.message);
-  }
-}
-
-async function clearAllIncidents() {
-  if (!confirm('Clear all incidents? This cannot be undone.')) return;
-  const res = await fetch('/api/threats/incidents/clear-all', {
-    method: 'POST', credentials: 'include',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({csrf_token: CSRF})
-  });
-  const data = await res.json();
-  if (data.ok) {
-    location.reload();
-  } else {
-    alert('Error: ' + (data.error || 'Failed to clear'));
-  }
-}
-</script>
 {% endblock %}
