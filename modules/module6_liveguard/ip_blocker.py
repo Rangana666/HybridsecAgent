@@ -86,17 +86,18 @@ class IPBlocker:
             return {"success": True, "ip": ip, "already_blocked": True, "error": None}
 
         # Execute firewall command
-        ok, err = self._fw_block(ip)
+        ok, err, backend_used = self._fw_block(ip)
         if ok:
             ledger[ip] = {
                 "ip":         ip,
                 "reason":     reason,
                 "source":     source,
+                "backend":    backend_used,
                 "blocked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "unblocked":  False,
             }
             self._write(ledger)
-            logger.warning("BLOCKED IP: %s | reason=%s | backend=%s", ip, reason, _BACKEND)
+            logger.warning("BLOCKED IP: %s | reason=%s | backend=%s", ip, reason, backend_used)
 
         return {"success": ok, "ip": ip, "already_blocked": False, "error": err}
 
@@ -108,7 +109,10 @@ class IPBlocker:
         if ip not in ledger:
             return {"success": False, "ip": ip, "error": "IP not in blocked list."}
 
-        ok, err = self._fw_unblock(ip)
+        # Reverse with whichever backend actually enforced the block —
+        # it may differ from the current _BACKEND if UFW was toggled since.
+        backend_used = ledger[ip].get("backend", _BACKEND)
+        ok, err = self._fw_unblock(ip, backend_used)
         if ok:
             entry = ledger.pop(ip)
             entry["unblocked"] = True
@@ -118,7 +122,7 @@ class IPBlocker:
             if isinstance(history, list):
                 history.append(entry)
             self._write(ledger)
-            logger.info("UNBLOCKED IP: %s | backend=%s", ip, _BACKEND)
+            logger.info("UNBLOCKED IP: %s | backend=%s", ip, backend_used)
 
         return {"success": ok, "ip": ip, "error": err}
 
@@ -135,32 +139,56 @@ class IPBlocker:
     # ── Firewall commands ──────────────────────────────────────
 
     @staticmethod
-    def _fw_block(ip: str) -> tuple[bool, Optional[str]]:
-        if _BACKEND == "ufw":
+    def _ufw_is_active() -> bool:
+        """`ufw deny ...` succeeds even when UFW is disabled — it just
+        queues the rule without loading it into netfilter, so the block
+        would silently have no real effect. Check live status first."""
+        try:
+            proc = subprocess.run(
+                [_UFW, "status"], capture_output=True, text=True, timeout=5,
+            )
+            return "Status: active" in proc.stdout
+        except Exception:
+            return False
+
+    def _fw_block(self, ip: str) -> tuple[bool, Optional[str], str]:
+        """Returns (success, error, backend_used) — backend_used is recorded
+        per-IP so unblock_ip() can reverse it with the same tool later."""
+        backend = _BACKEND
+        if backend == "ufw" and not self._ufw_is_active():
+            # UFW is disabled — a `ufw deny` rule wouldn't actually be
+            # enforced. Fall back to raw iptables so the block is real.
+            logger.warning(
+                "UFW is installed but inactive — blocking %s via iptables "
+                "directly so the block actually takes effect.", ip,
+            )
+            backend = "iptables" if Path(_IPTABLES).exists() else "none"
+
+        if backend == "ufw":
             cmd = [_UFW, "deny", "from", ip, "to", "any"]
-        elif _BACKEND == "iptables":
+        elif backend == "iptables":
             cmd = [_IPTABLES, "-I", "INPUT", "1", "-s", ip, "-j", "DROP"]
         else:
             logger.warning("DRY-RUN block: %s (no firewall backend available)", ip)
-            return False, "No firewall backend found"
+            return False, "No firewall backend found", backend
 
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             if proc.returncode == 0:
-                logger.info("Firewall blocked %s via %s", ip, _BACKEND)
-                return True, None
+                logger.info("Firewall blocked %s via %s", ip, backend)
+                return True, None, backend
             err = proc.stderr.strip() or proc.stdout.strip()
             logger.error("Firewall block failed for %s: %s", ip, err)
-            return False, err
+            return False, err, backend
         except Exception as e:
             logger.error("Firewall block exception for %s: %s", ip, e)
-            return False, str(e)
+            return False, str(e), backend
 
     @staticmethod
-    def _fw_unblock(ip: str) -> tuple[bool, Optional[str]]:
-        if _BACKEND == "ufw":
+    def _fw_unblock(ip: str, backend: str) -> tuple[bool, Optional[str]]:
+        if backend == "ufw":
             cmd = [_UFW, "delete", "deny", "from", ip, "to", "any"]
-        elif _BACKEND == "iptables":
+        elif backend == "iptables":
             cmd = [_IPTABLES, "-D", "INPUT", "-s", ip, "-j", "DROP"]
         else:
             return False, "No firewall backend found"
