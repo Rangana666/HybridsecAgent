@@ -167,6 +167,48 @@
     </div>
   </div>
 
+  <!-- Blocked IPs -->
+  <div class="hs-card">
+    <div class="card-header-custom">
+      <span><i class="bi bi-shield-slash"></i> Blocked IPs (click Unblock to allow again)</span>
+    </div>
+    <div class="card-body-custom" id="blockedIpFeed">
+      {% if blocked_ips %}
+        <div class="list-group list-group-flush" id="blockedIpList">
+          {% for b in blocked_ips %}
+            <div class="incident-row" id="blocked-{{ b.ip }}">
+              <div class="d-flex align-items-center gap-3">
+                <span class="severity-dot critical"></span>
+                <div>
+                  <div class="inc-type">{{ b.ip }}</div>
+                  <div class="inc-meta">
+                    <strong>Reason:</strong> {{ b.reason or '—' }}
+                    &nbsp;·&nbsp; via {{ b.backend or 'unknown' }}
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                <div style="font-size:0.68rem; color:#94a3b8;">
+                  {{ (b.blocked_at or '')[:16].replace('T',' ') }}
+                </div>
+                <button class="btn btn-sm btn-outline-warning btn-unblock-ip" style="border-radius:8px; font-weight:700;"
+                        data-ip="{{ b.ip }}">
+                  <i class="bi bi-unlock me-1"></i>Unblock
+                </button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" id="noBlockedIps">
+          <div class="empty-icon"><i class="bi bi-shield-check"></i></div>
+          <h6 class="fw-bold text-success">No IPs Currently Blocked</h6>
+          <p class="text-muted small">Blocked attacker IPs will appear here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
   <!-- Feed -->
   <div class="hs-card">
     <div class="card-header-custom">
@@ -262,6 +304,47 @@ async function clearOneIncident(index, btn) {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-x"></i>';
     alert('Error: ' + (data.error || 'Failed to clear'));
+  }
+}
+
+document.querySelectorAll('.btn-unblock-ip').forEach(btn => {
+  btn.addEventListener('click', () => handleUnblockIp(btn));
+});
+
+async function handleUnblockIp(btn) {
+  const ip = btn.dataset.ip;
+  if (!confirm('Unblock ' + ip + '? Traffic from this IP will be allowed again.')) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  try {
+    const res = await fetch('/api/threats/unblock', {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({csrf_token: CSRF, ip: ip})
+    });
+    const data = await res.json();
+    if (data.success) {
+      const row = document.getElementById('blocked-' + ip);
+      row.style.transition = 'opacity 0.3s';
+      row.style.opacity = '0';
+      setTimeout(() => {
+        row.remove();
+        if (!document.querySelector('#blockedIpList .incident-row')) {
+          document.getElementById('blockedIpFeed').innerHTML =
+            '<div class="empty-state"><div class="empty-icon"><i class="bi bi-shield-check"></i></div><h6 class="fw-bold text-success">No IPs Currently Blocked</h6><p class="text-muted small">Blocked attacker IPs will appear here.</p></div>';
+        }
+      }, 300);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-unlock me-1"></i>Unblock';
+      alert('Error: ' + (data.error || 'Failed to unblock'));
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-unlock me-1"></i>Unblock';
+    alert('Request failed: ' + err.message);
   }
 }
 

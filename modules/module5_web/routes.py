@@ -469,7 +469,14 @@ def threats():
     except Exception as e:
         logger.warning("Could not load incidents: %s", e)
 
-    return render_template("threats.html", incidents=incidents)
+    from modules.module6_liveguard.ip_blocker import IPBlocker
+    blocked_ips = sorted(
+        IPBlocker().list_blocked(),
+        key=lambda b: b.get("blocked_at", ""),
+        reverse=True,
+    )
+
+    return render_template("threats.html", incidents=incidents, blocked_ips=blocked_ips)
 
 
 @routes_bp.route("/reports")
