@@ -17,7 +17,7 @@ Usage:
 import logging
 import secrets
 import sys
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, session, g, request
@@ -32,7 +32,7 @@ try:
     from config import (
         SECRET_KEY, SESSION_LIFETIME_HOURS,
         FLASK_DEBUG, TEMPLATES_DIR, STATIC_DIR,
-        DATABASE_PATH,
+        DATABASE_PATH, HYBRIDSEC_ACCESS_LOG,
     )
 except ImportError:
     SECRET_KEY = "CHANGE-THIS-IN-PRODUCTION"
@@ -42,6 +42,7 @@ except ImportError:
     TEMPLATES_DIR = _root / "templates"
     STATIC_DIR = _root / "static"
     DATABASE_PATH = _root / "database" / "hybridsec.db"
+    HYBRIDSEC_ACCESS_LOG = str(_root / "logs" / "access.log")
 
 # ── Limiter (shared so blueprints can import it) ──────────────────
 limiter = Limiter(
@@ -87,6 +88,28 @@ def create_app() -> Flask:
     def load_logged_in_user():
         from modules.module5_web.auth import get_current_user
         g.user = get_current_user()
+
+    # ── Access log for Live Guard's WebMonitor (SQLi/XSS/DDoS detection) ──
+    # This app is served directly by Werkzeug (no Apache/Nginx in front of
+    # it), so WebMonitor has nothing to tail unless we write one ourselves,
+    # in the same Combined Log Format it already knows how to parse.
+    _access_log_path = Path(HYBRIDSEC_ACCESS_LOG)
+    _access_log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    @app.after_request
+    def log_access(response):
+        try:
+            now = datetime.now().astimezone().strftime("%d/%b/%Y:%H:%M:%S %z")
+            line = (
+                f'{request.remote_addr or "-"} - - [{now}] '
+                f'"{request.method} {request.full_path.rstrip("?")} {request.environ.get("SERVER_PROTOCOL", "HTTP/1.1")}" '
+                f'{response.status_code} {response.calculate_content_length() or 0}\n'
+            )
+            with open(_access_log_path, "a") as f:
+                f.write(line)
+        except Exception:
+            pass  # Never let access logging break a real request
+        return response
 
     # ── Register blueprints ────────────────────────────────────
     from modules.module5_web.auth   import auth_bp

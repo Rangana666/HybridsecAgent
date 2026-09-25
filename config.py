@@ -149,6 +149,10 @@ AUTH_LOG_PATH = "/var/log/auth.log"             # SSH auth events
 SYSLOG_PATH = "/var/log/syslog"                 # General system log
 APACHE_ACCESS_LOG = "/var/log/apache2/access.log"
 NGINX_ACCESS_LOG = "/var/log/nginx/access.log"
+# HybridSec's own access log (Combined Log Format), written by app.py, so
+# WebMonitor has something to tail when there's no Apache/Nginx in front of
+# the dashboard itself (i.e. this deployment).
+HYBRIDSEC_ACCESS_LOG = str(LOGS_DIR / "access.log")
 
 # ── Auto-Fix Safety ───────────────────────────────────────────
 AUTOFIX_REQUIRE_CONFIRMATION = True  # Require admin to type YES before executing

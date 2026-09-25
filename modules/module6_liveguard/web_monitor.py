@@ -37,16 +37,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 try:
     from config import (
-        APACHE_ACCESS_LOG, NGINX_ACCESS_LOG,
+        APACHE_ACCESS_LOG, NGINX_ACCESS_LOG, HYBRIDSEC_ACCESS_LOG,
         DDOS_REQUEST_THRESHOLD, DDOS_WINDOW_SECONDS,
         LOGS_DIR,
     )
 except ImportError:
     APACHE_ACCESS_LOG = "/var/log/apache2/access.log"
     NGINX_ACCESS_LOG  = "/var/log/nginx/access.log"
+    LOGS_DIR = Path(__file__).parent.parent.parent / "logs"
+    HYBRIDSEC_ACCESS_LOG = str(LOGS_DIR / "access.log")
     DDOS_REQUEST_THRESHOLD = 100
     DDOS_WINDOW_SECONDS    = 60
-    LOGS_DIR = Path(__file__).parent.parent.parent / "logs"
 
 # ── Attack patterns ────────────────────────────────────────────
 
@@ -153,10 +154,12 @@ class WebMonitor:
 
     @staticmethod
     def _find_log() -> Optional[Path]:
-        for p in [APACHE_ACCESS_LOG, NGINX_ACCESS_LOG]:
+        # HybridSec's own access log first — it's what's actually being
+        # served on this deployment (no Apache/Nginx in front of it).
+        for p in [HYBRIDSEC_ACCESS_LOG, APACHE_ACCESS_LOG, NGINX_ACCESS_LOG]:
             if Path(p).exists():
                 return Path(p)
-        return Path(APACHE_ACCESS_LOG)   # return default even if it doesn't exist
+        return Path(HYBRIDSEC_ACCESS_LOG)   # return default even if it doesn't exist
 
     def _run(self):
         if not self._log_path or not self._log_path.exists():
