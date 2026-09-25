@@ -15,6 +15,7 @@ Public API:
 
 import json
 import logging
+import socket
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -32,8 +33,34 @@ except ImportError:
 
 _BLOCKED_IPS_FILE = Path(LOGS_DIR) / "blocked_ips.json"
 
-# IPs that must NEVER be blocked (localhost, loopback, common management IPs)
-_WHITELIST: set[str] = {"127.0.0.1", "::1", "localhost"}
+
+def _local_ips() -> set[str]:
+    """
+    Every IP address this machine actually owns (all interfaces, not just
+    the primary one) — these must never be auto-blocked. With `ufw logging
+    full`, blocked-packet log lines can legitimately show SRC=127.0.0.53
+    (systemd-resolved's stub resolver) or even the server's own public IP
+    (self-directed / reflected traffic), and naively blocking those would
+    break local DNS or firewall off the dashboard from itself.
+    """
+    ips = {"127.0.0.1", "::1", "localhost"}
+    try:
+        import psutil
+        for addrs in psutil.net_if_addrs().values():
+            for a in addrs:
+                if a.family in (socket.AF_INET, socket.AF_INET6):
+                    ips.add(a.address.split("%")[0])  # strip IPv6 zone id
+    except Exception as e:
+        logger.warning("Could not enumerate local interface IPs: %s", e)
+    return ips
+
+
+# IPs that must NEVER be blocked (localhost, loopback, every local interface)
+_WHITELIST: set[str] = _local_ips()
+
+
+def _is_loopback(ip: str) -> bool:
+    return ip.startswith("127.") or ip in ("::1", "localhost")
 
 # Absolute paths so systemd's restricted PATH doesn't hide the binaries
 _UFW      = "/usr/sbin/ufw"
@@ -77,7 +104,7 @@ class IPBlocker:
         """
         ip = ip.strip()
 
-        if not ip or ip in _WHITELIST:
+        if not ip or ip in _WHITELIST or _is_loopback(ip):
             return {"success": False, "ip": ip, "already_blocked": False,
                     "error": f"IP {ip!r} is whitelisted or invalid."}
 
